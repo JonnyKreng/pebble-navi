@@ -3,3 +3,5 @@ node_modules
 .lock-waf_darwin_build
 cmake-build-debug
 .idea
+
+src/**/.js
