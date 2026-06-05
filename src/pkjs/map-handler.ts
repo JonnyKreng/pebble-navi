@@ -9,7 +9,6 @@ import {
   switchMap,
   takeUntil,
   tap,
-  throttleTime,
 } from 'rxjs';
 import { MapState, renderForState, RenderOutput } from './server/stateRenderer';
 import { Destination } from './index';
@@ -29,7 +28,7 @@ export class MapHandler {
   private existingRoute: RouteResult | undefined = undefined;
   private sending = false;
   private rendering = false;
-  private readonly recalcTimes: number[] = [];
+  private lastRecalc = 0;
   private readonly mapState = new BehaviorSubject<PartialMapState>({});
 
   constructor(destroyApp: Observable<void>) {
@@ -57,7 +56,6 @@ export class MapHandler {
             state.mode !== undefined,
         ),
         map((state: PartialMapState) => <MapState>state),
-        throttleTime(3000, undefined, { leading: true, trailing: true }),
         filter(() => !this.rendering),
         tap(() => (this.rendering = true)),
         tap((state) => {
@@ -157,15 +155,8 @@ export class MapHandler {
 
   private canRecalc(): boolean {
     const now = Date.now();
-    const window = 60000;
-    const max = 2;
-    while (this.recalcTimes.length > 0 && this.recalcTimes[0] < now - window) {
-      this.recalcTimes.shift();
-    }
-    if (this.recalcTimes.length >= max) {
-      return false;
-    }
-    this.recalcTimes.push(now);
+    if (now - this.lastRecalc < 30000) return false;
+    this.lastRecalc = now;
     return true;
   }
 
