@@ -48,37 +48,28 @@ static void menu_layer_update_proc(Layer* layer, GContext* ctx)
 
     if (s_mode == MODE_MAIN_MENU)
     {
-        int num_items = s_has_route ? 5 : 4;
-        int total_h = num_items * ITEM_HEIGHT;
+        int num_visible = s_has_route ? 5 : 4;
+        int total_h = num_visible * ITEM_HEIGHT;
         int start_y = (bounds.size.h - total_h) / 2;
 
-        for (int i = 0; i < num_items; i++)
+        int drawn = 0;
+        for (int slot = 0; slot < 5; slot++)
         {
+            if (slot == 1 && !s_has_route) continue;
+
             const char* text;
-            if (i == 0)
+            switch (slot)
             {
-                text = "Select Destination";
-            }
-            else if (i == 1)
-            {
-                text = "Save Location";
-            }
-            else if (i == 2)
-            {
-                text = s_backlight_label;
-            }
-            else if (i == 3)
-            {
-                text = s_route_label;
-            }
-            else
-            {
-                text = "Stop Routing";
+                case 0: text = "Select Destination"; break;
+                case 1: text = "Stop Routing";       break;
+                case 2: text = "Save Location";      break;
+                case 3: text = s_route_label;        break;
+                default: text = s_backlight_label;   break;
             }
 
-            GRect item_rect = GRect(0, start_y + i * ITEM_HEIGHT, bounds.size.w, ITEM_HEIGHT);
+            GRect item_rect = GRect(0, start_y + drawn * ITEM_HEIGHT, bounds.size.w, ITEM_HEIGHT);
 
-            if (i == s_selected_index)
+            if (drawn == s_selected_index)
             {
                 graphics_context_set_fill_color(ctx, GColorWhite);
                 graphics_fill_rect(ctx, item_rect, 0, GCornerNone);
@@ -93,6 +84,7 @@ static void menu_layer_update_proc(Layer* layer, GContext* ctx)
                                fonts_get_system_font(FONT_KEY_GOTHIC_24),
                                item_rect, GTextOverflowModeTrailingEllipsis,
                                GTextAlignmentCenter, NULL);
+            drawn++;
         }
     }
     else if (s_mode == MODE_DEST_LIST)
@@ -245,35 +237,36 @@ bool menu_handle_select(void)
 
     if (s_mode == MODE_MAIN_MENU)
     {
-        if (s_selected_index == 0)
+        static const int slot_noroute[4] = {0, 2, 3, 4};
+        int slot = s_has_route ? s_selected_index : slot_noroute[s_selected_index];
+
+        switch (slot)
         {
-            if (s_send_cb) s_send_cb(MESSAGE_KEY_REQUEST_DESTINATIONS, 1);
-            reset_dest_collection();
-        }
-        else if (s_selected_index == 1)
-        {
-            if (s_send_cb) s_send_cb(MESSAGE_KEY_SAVE_CURRENT_LOCATION, 1);
-            menu_hide();
-        }
-        else if (s_selected_index == 2)
-        {
-            s_backlight_on = !s_backlight_on;
-            light_enable(s_backlight_on);
-            update_backlight_label();
-            layer_mark_dirty(s_menu_layer);
-        }
-        else if (s_selected_index == 3)
-        {
-            s_route_mode = (s_route_mode + 1) % 3;
-            update_route_label();
-            if (s_send_cb) s_send_cb(MESSAGE_KEY_ROUTE_MODE, s_route_mode);
-            layer_mark_dirty(s_menu_layer);
-        }
-        else
-        {
-            if (s_send_cb) s_send_cb(MESSAGE_KEY_STOP_ROUTING, 1);
-            s_has_route = false;
-            menu_hide();
+            case 0:
+                if (s_send_cb) s_send_cb(MESSAGE_KEY_REQUEST_DESTINATIONS, 1);
+                reset_dest_collection();
+                break;
+            case 1:
+                if (s_send_cb) s_send_cb(MESSAGE_KEY_STOP_ROUTING, 1);
+                s_has_route = false;
+                menu_hide();
+                break;
+            case 2:
+                if (s_send_cb) s_send_cb(MESSAGE_KEY_SAVE_CURRENT_LOCATION, 1);
+                menu_hide();
+                break;
+            case 3:
+                s_route_mode = (s_route_mode + 1) % 3;
+                update_route_label();
+                if (s_send_cb) s_send_cb(MESSAGE_KEY_ROUTE_MODE, s_route_mode);
+                layer_mark_dirty(s_menu_layer);
+                break;
+            default:
+                s_backlight_on = !s_backlight_on;
+                light_enable(s_backlight_on);
+                update_backlight_label();
+                layer_mark_dirty(s_menu_layer);
+                break;
         }
     }
     else if (s_mode == MODE_DEST_LIST)
