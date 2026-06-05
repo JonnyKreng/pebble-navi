@@ -126,27 +126,28 @@ fromEvent(Pebble, 'ready')
 
       console.log('App initialized');
 
-      let latitude = 52.13876865070192;
-      let longitude = 8.388358372735047;
-      let bering = 0;
-
-      interval(2000)
-        .pipe(startWith(-1), takeUntil(destroyApp))
-        .subscribe(() => {
-          // Generate random position events
-          latitude += (Math.random() - 0.2) / 1000;
-          longitude += (Math.random() - 0.2) / 1000;
-          bering += 10;
-          bering = bering % 360;
-
-          location.next(<GeolocationPosition>(<unknown>{
-            coords: {
-              latitude: latitude,
-              longitude: longitude,
-              bearing: bering,
-            },
-          }));
-        });
+      // ## Random Mover to test navigation in emulator
+      // let latitude = 52.13876865070192;
+      // let longitude = 8.388358372735047;
+      // let bering = 0;
+      //
+      // interval(2000)
+      //   .pipe(startWith(-1), takeUntil(destroyApp))
+      //   .subscribe(() => {
+      //     // Generate random position events
+      //     latitude += (Math.random() - 0.2) / 1000;
+      //     longitude += (Math.random() - 0.2) / 1000;
+      //     bering += 10;
+      //     bering = bering % 360;
+      //
+      //     location.next(<GeolocationPosition>(<unknown>{
+      //       coords: {
+      //         latitude: latitude,
+      //         longitude: longitude,
+      //         bearing: bering,
+      //       },
+      //     }));
+      //   });
     } catch (e) {
       console.error(e);
     }

@@ -32,10 +32,14 @@ export function buildSettings(): string {
   html += '.suggestions li{padding:8px;cursor:pointer;font-size:13px;border-bottom:1px solid #333}';
   html += '.suggestions li:hover{background:#0f3460}';
   html += '.section-title{color:#4fc3f7;font-size:14px;margin:16px 0 8px}';
+  html += '.notice{font-size:11px;color:#888;padding:16px 0 0;line-height:1.5}';
+  html += '.notice a{color:#4fc3f7}';
+  html += '.notice strong{color:#aaa}';
   html += '</style></head><body>';
   html += '<h1>Saved Destinations</h1>';
   html += '<ul id="list"></ul>';
   html += '<div class="section-title">Add Destination</div>';
+  html += '<input type="text" id="name" placeholder="Label (optional)" autocomplete="off">';
   html += '<div class="input-wrap">';
   html += '<input type="text" id="addr" placeholder="Type address or lat,lng" autocomplete="off">';
   html += '<ul id="suggestions" class="suggestions"></ul>';
@@ -47,6 +51,9 @@ export function buildSettings(): string {
     key +
     '">';
   html += '<button onclick="saveAndClose()">Save & Close</button>';
+  if (!key)
+    html +=
+      '<div class="notice">Coordinates (lat,lng) always work. For address lookup, create an account at <a href="https://account.heigit.org/manage/key" target="_blank">account.heigit.org/manage/key</a> and paste the API key above. I am not affiliated with heigit.</div>';
   html += '<script>';
   html += 'var dests = ' + JSON.stringify(destinations) + ';';
   html += 'function render(){var l=document.getElementById("list");';
@@ -61,11 +68,11 @@ export function buildSettings(): string {
   html +=
     'document.getElementById("addr").addEventListener("blur",function(){setTimeout(function(){document.getElementById("suggestions").style.display="none"},200)});';
   html +=
-    'function pickSuggestion(i){var f=window._sugs[i];if(!f)return;var c=f.geometry.coordinates;dests.push({lat:c[1],lng:c[0],name:f.properties.label||f.properties.name});document.getElementById("addr").value="";document.getElementById("suggestions").style.display="none";window._sugs=null;render()}';
+    'function pickSuggestion(i){var f=window._sugs[i];if(!f)return;var c=f.geometry.coordinates;var nm=document.getElementById("name").value.trim()||f.properties.label||f.properties.name;dests.push({lat:c[1],lng:c[0],name:nm});document.getElementById("addr").value="";document.getElementById("name").value="";document.getElementById("suggestions").style.display="none";window._sugs=null;render()}';
   html +=
-    'function addDest(){var addr=document.getElementById("addr").value.trim();if(!addr)return;var parts=addr.split(",").map(function(s){return parseFloat(s.trim())});if(parts.length===2&&!isNaN(parts[0])&&!isNaN(parts[1])){dests.push({lat:parts[0],lng:parts[1],name:addr});document.getElementById("addr").value="";render();return}var xhr=new XMLHttpRequest();xhr.open("GET","https://api.openrouteservice.org/geocode/search?api_key="+encodeURIComponent(document.getElementById("apiKey").value)+"&text="+encodeURIComponent(addr)+"&size=1",true);xhr.onload=function(){if(xhr.status>=200&&xhr.status<300){var d=JSON.parse(xhr.responseText);if(d.features&&d.features.length){var c=d.features[0].geometry.coordinates;dests.push({lat:c[1],lng:c[0],name:d.features[0].properties.label||addr});document.getElementById("addr").value="";render()}else{alert("Not found")}}};xhr.send()}';
+    'function addDest(){var addr=document.getElementById("addr").value.trim();if(!addr)return;var nm=document.getElementById("name").value.trim();var parts=addr.split(",").map(function(s){return parseFloat(s.trim())});if(parts.length===2&&!isNaN(parts[0])&&!isNaN(parts[1])){dests.push({lat:parts[0],lng:parts[1],name:nm||addr});document.getElementById("addr").value="";document.getElementById("name").value="";render();return}var xhr=new XMLHttpRequest();xhr.open("GET","https://api.openrouteservice.org/geocode/search?api_key="+encodeURIComponent(document.getElementById("apiKey").value)+"&text="+encodeURIComponent(addr)+"&size=1",true);xhr.onload=function(){if(xhr.status>=200&&xhr.status<300){var d=JSON.parse(xhr.responseText);if(d.features&&d.features.length){var c=d.features[0].geometry.coordinates;dests.push({lat:c[1],lng:c[0],name:nm||d.features[0].properties.label||addr});document.getElementById("addr").value="";document.getElementById("name").value="";render()}else{alert("Not found")}}};xhr.send()}';
   html +=
-    'function saveAndClose(){var payload={destinations:dests};var ak=document.getElementById("apiKey").value;if(ak)payload.ors_api_key=ak;document.location="pebblejs://close#"+encodeURIComponent(JSON.stringify(payload))}';
+    'function saveAndClose(){var payload={destinations:dests,ors_api_key:document.getElementById("apiKey").value};document.location="pebblejs://close#"+encodeURIComponent(JSON.stringify(payload))}';
   html += 'render();';
   html += '<\/script></body></html>';
   return html;
@@ -76,10 +83,11 @@ export function saveSettings(response: string): Destination[] {
     const data = JSON.parse(decodeURIComponent(response));
     if (data.destinations) {
       saveDestinations(data.destinations);
-      return data.destinations;
     }
     if (data.ors_api_key) {
       localStorage.setItem(OSR_API_KEY, data.ors_api_key);
+    } else {
+      localStorage.removeItem(OSR_API_KEY);
     }
   } catch (err) {
     console.log('Config parse error: ' + err);
