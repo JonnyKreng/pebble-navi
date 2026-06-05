@@ -7,7 +7,7 @@ export interface RenderInput {
   height: number;
   zoom: number;
   center: { lat: number; lng: number };
-  start: { lat: number; lng: number };
+  start?: { lat: number; lng: number };
   dest?: { lat: number; lng: number };
   currentPos?: { lat: number; lng: number };
   bearing?: number;
@@ -346,10 +346,12 @@ export function renderMap(input: RenderInput): Uint8Array {
     }
   }
 
-  const origin = markerPixel(input.start.lat, input.start.lng, input.zoom, vl, vt);
-  drawCircleOutline(buf, width, height, origin.x, origin.y, 6, 255, 255, 255);
-  drawFilledCircle(buf, width, height, origin.x, origin.y, 5, 0x22, 0xcc, 0x66);
-  drawCircleOutline(buf, width, height, origin.x, origin.y, 5, 255, 255, 255);
+  if (input.start) {
+    const origin = markerPixel(input.start.lat, input.start.lng, input.zoom, vl, vt);
+    drawCircleOutline(buf, width, height, origin.x, origin.y, 6, 255, 255, 255);
+    drawFilledCircle(buf, width, height, origin.x, origin.y, 5, 0x22, 0xcc, 0x66);
+    drawCircleOutline(buf, width, height, origin.x, origin.y, 5, 255, 255, 255);
+  }
 
   if (input.dest) {
     const d = markerPixel(input.dest.lat, input.dest.lng, input.zoom, vl, vt);

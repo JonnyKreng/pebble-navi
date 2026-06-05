@@ -192,18 +192,6 @@ void navigation_destroy_map_layer(void)
     }
 }
 
-void navigation_cancel_transfer(void)
-{
-    s_chunks_received = 0;
-    s_decompressed_offset = 0;
-    s_rle_state = 0;
-    s_rle_run_count = 0;
-    s_transfer_active = false;
-#ifdef DEBUG_PNG
-    APP_LOG(APP_LOG_LEVEL_INFO, "Transfer cancelled");
-#endif
-}
-
 bool navigation_handle_message(DictionaryIterator* iter)
 {
     Tuple* palette = dict_find(iter, MESSAGE_KEY_IMAGE_PALETTE);

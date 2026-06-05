@@ -1,7 +1,13 @@
 import type { Destination } from './index';
+import { loadDestinations, saveDestinations } from './helper';
+import Event = PebbleKit.Event;
 
-export function BuildSettingsMenu(destinations: Destination[], apiKey?: string): string {
-  const key = apiKey || '';
+const OSR_API_KEY = 'ors_api_key';
+
+export function buildSettings(): string {
+  const key = localStorage.getItem(OSR_API_KEY) || '';
+  const destinations = loadDestinations();
+
   let html = '';
   html +=
     '<!DOCTYPE html><html><head><meta name="viewport" content="width=device-width, initial-scale=1">';
@@ -63,4 +69,20 @@ export function BuildSettingsMenu(destinations: Destination[], apiKey?: string):
   html += 'render();';
   html += '<\/script></body></html>';
   return html;
+}
+
+export function saveSettings(response: string): Destination[] {
+  try {
+    const data = JSON.parse(decodeURIComponent(response));
+    if (data.destinations) {
+      saveDestinations(data.destinations);
+      return data.destinations;
+    }
+    if (data.ors_api_key) {
+      localStorage.setItem(OSR_API_KEY, data.ors_api_key);
+    }
+  } catch (err) {
+    console.log('Config parse error: ' + err);
+  }
+  return [];
 }

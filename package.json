@@ -1,69 +1,71 @@
 {
-    "author": "jonny",
-    "keywords": [
-        "pebble-app"
+  "author": "jonny",
+  "keywords": [
+    "pebble-app"
+  ],
+  "name": "navi-app",
+  "pebble": {
+    "capabilities": [
+      "location",
+      "configurable"
     ],
-    "name": "navi-app",
-    "pebble": {
-        "capabilities": [
-            "location",
-            "configurable"
-        ],
-        "displayName": "Navi App",
-        "enableMultiJS": true,
-        "messageKeys": [
-            "REQUEST_WEATHER",
-            "IMAGE_CHUNK_INDEX",
-            "IMAGE_CHUNKS_TOTAL",
-            "IMAGE_CHUNK_DATA",
-            "IMAGE_CHUNK_SIZE",
-            "IMAGE_PALETTE",
-            "ZOOM_DIR",
-            "REQUEST_DESTINATIONS",
-            "SELECTED_DEST_INDEX",
-            "ROUTE_DISTANCE",
-            "ROUTE_DURATION",
-            "NEXT_STEP_TYPE",
-            "NEXT_STEP_MODIFIER",
-            "NEXT_STEP_NAME",
-            "NEXT_STEP_DISTANCE",
-            "SAVE_CURRENT_LOCATION",
-            "DEST_NAMES_TOTAL",
-            "JSReady"
-        ],
-        "projectType": "native",
-        "resources": {
-            "media": []
-        },
-        "sdkVersion": "3",
-        "targetPlatforms": [
-            "emery",
-            "gabbro"
-        ],
-        "uuid": "64f06958-8a2e-4709-b672-0c3a859e7914",
-        "watchapp": {
-            "watchface": false
-        }
+    "displayName": "Navi App",
+    "enableMultiJS": true,
+    "messageKeys": [
+      "REQUEST_WEATHER",
+      "IMAGE_CHUNK_INDEX",
+      "IMAGE_CHUNKS_TOTAL",
+      "IMAGE_CHUNK_DATA",
+      "IMAGE_CHUNK_SIZE",
+      "IMAGE_PALETTE",
+      "ZOOM_DIR",
+      "REQUEST_DESTINATIONS",
+      "SELECTED_DEST_INDEX",
+      "ROUTE_DISTANCE",
+      "ROUTE_DURATION",
+      "NEXT_STEP_TYPE",
+      "NEXT_STEP_MODIFIER",
+      "NEXT_STEP_NAME",
+      "NEXT_STEP_DISTANCE",
+      "SAVE_CURRENT_LOCATION",
+      "DEST_NAMES_TOTAL",
+      "JSReady"
+    ],
+    "projectType": "native",
+    "resources": {
+      "media": []
     },
-    "version": "1.0.0",
-    "scripts": {
-        "tsc": "tsc",
-        "bundle": "node build-pkjs.js",
-        "build": "tsc && pebble build",
-        "start": "npx tsc && pebble build && pebble install --emulator emery",
-        "screenshot": "pebble screenshot screenshot.png",
-        "push": "npx tsc && pebble build && pebble install --phone",
-        "wipe": "pebble wipe",
-        "format": "prettier --write \"src/**/*.ts\""
-    },
-    "dependencies": {
-        "upng-js": "^2.1.0"
-    },
-    "devDependencies": {
-        "@types/pebblekitjs": "^4.0.33",
-        "@types/upng-js": "^2.1.0",
-        "esbuild": "^0.28.0",
-        "prettier": "^3.8.3",
-        "typescript": "^6.0.3"
+    "sdkVersion": "3",
+    "targetPlatforms": [
+      "emery",
+      "gabbro"
+    ],
+    "uuid": "64f06958-8a2e-4709-b672-0c3a859e7914",
+    "watchapp": {
+      "watchface": false
     }
+  },
+  "version": "1.0.0",
+  "scripts": {
+    "tsc": "tsc",
+    "bundle": "node build-pkjs.js",
+    "build": "tsc && pebble build",
+    "start": "npx tsc && pebble build && pebble install --emulator emery",
+    "debug": "npx tsc && pebble build && pebble install --emulator emery & pebble logs --emulator emery",
+    "screenshot": "pebble screenshot screenshot.png",
+    "push": "npx tsc && pebble build && pebble install --phone",
+    "wipe": "pebble wipe",
+    "format": "prettier --write \"src/**/*.ts\""
+  },
+  "dependencies": {
+    "rxjs": "^7.8.2",
+    "upng-js": "^2.1.0"
+  },
+  "devDependencies": {
+    "@types/pebblekitjs": "^4.0.33",
+    "@types/upng-js": "^2.1.0",
+    "esbuild": "^0.28.0",
+    "prettier": "^3.8.3",
+    "typescript": "^6.0.3"
+  }
 }

@@ -1,19 +1,13 @@
 import { TILE_SIZE, getTile, worldPixel } from './osm.js';
-import {
-  fetchRoute,
-  routeProgress,
-  findNextStep,
-  type RouteResult,
-  type RouteStep,
-} from './routing.js';
+import { fetchRoute, findNextStep, type RouteResult, type RouteStep } from './routing.js';
 import { renderMap } from './renderer.js';
 import { quantizeToPebble } from './pebble-palette.js';
 
 export interface MapState {
-  origin: { lat: number; lng: number };
-  dest?: { lat: number; lng: number };
-  currentPos?: { lat: number; lng: number };
+  currentPos: { lat: number; lng: number };
   bearing?: number;
+  origin?: { lat: number; lng: number };
+  dest?: { lat: number; lng: number };
   zoom: number;
   mode: string;
   width: number;
@@ -29,7 +23,10 @@ export interface RenderOutput {
   };
 }
 
-async function renderForState(s: MapState, existingRoute?: RouteResult): Promise<RenderOutput> {
+export async function renderForState(
+  s: MapState,
+  existingRoute?: RouteResult,
+): Promise<RenderOutput> {
   let center = s.currentPos || s.origin;
 
   const centerPx = worldPixel(center.lat, center.lng, s.zoom);
@@ -56,7 +53,7 @@ async function renderForState(s: MapState, existingRoute?: RouteResult): Promise
 
   const route =
     existingRoute ??
-    (s.dest ? ((await fetchRoute(s.origin, s.dest, s.mode)) ?? undefined) : undefined);
+    (s.dest && s.origin ? ((await fetchRoute(s.origin, s.dest, s.mode)) ?? undefined) : undefined);
 
   const rgba = renderMap({
     width: s.width,
@@ -83,30 +80,5 @@ async function renderForState(s: MapState, existingRoute?: RouteResult): Promise
     pixels,
     route,
     nextStep,
-  };
-}
-
-export function createPipeline(initial: MapState) {
-  let state: MapState = { ...initial };
-  let lastRoute: RouteResult | undefined;
-
-  return {
-    setState(partial: Partial<MapState>) {
-      state = { ...state, ...partial };
-    },
-
-    async render(): Promise<RenderOutput> {
-      const result = await renderForState(state, lastRoute);
-      if (result.route) {
-        lastRoute = result.route;
-      } else {
-        lastRoute = undefined;
-      }
-      return result;
-    },
-
-    getState(): MapState {
-      return { ...state };
-    },
   };
 }

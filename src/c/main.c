@@ -87,7 +87,6 @@ static void outbox_sent(DictionaryIterator* iterator, void* context)
 
 static void send_zoom_dir(int dir)
 {
-    navigation_cancel_transfer();
     DictionaryIterator* iter;
     AppMessageResult result = app_message_outbox_begin(&iter);
     if (result != APP_MSG_OK) return;
@@ -119,7 +118,7 @@ static void up_click_handler(ClickRecognizerRef recognizer, void* context)
 static void down_click_handler(ClickRecognizerRef recognizer, void* context)
 {
     if (menu_handle_down()) return;
-    send_zoom_dir(0);
+    send_zoom_dir(-1);
 }
 
 static void back_click_handler(ClickRecognizerRef recognizer, void* context)
