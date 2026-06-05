@@ -79,7 +79,9 @@ static void outbox_failed(DictionaryIterator* iterator, AppMessageResult reason,
 
 static void outbox_sent(DictionaryIterator* iterator, void* context)
 {
+#ifdef LOGGING_ENABLED
     APP_LOG(APP_LOG_LEVEL_INFO, "Outbox send success!");
+#endif
     try_flush_pending();
 }
 
