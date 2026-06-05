@@ -139,8 +139,8 @@ fromEvent(Pebble, 'ready')
       //   .pipe(startWith(-1), takeUntil(destroyApp))
       //   .subscribe(() => {
       //     // Generate random position events
-      //     latitude += (Math.random() - 0.2) / 1000;
-      //     longitude += (Math.random() - 0.2) / 1000;
+      //     latitude += (Math.random() + 0.3) / 1000;
+      //     longitude -= (Math.random() + 0.3) / 1000;
       //     bering += 10;
       //     bering = bering % 360;
       //

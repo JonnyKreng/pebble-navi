@@ -9,13 +9,7 @@ export function loadDestinations(): Destination[] {
       return JSON.parse(saved);
     }
   } catch (e) {}
-  return [
-    {
-      lat: 52.13876865070192,
-      lng: 8.388358372735047,
-      name: 'Melle',
-    },
-  ];
+  return [];
 }
 
 export function saveDestinations(destinations: Destination[]): void {
