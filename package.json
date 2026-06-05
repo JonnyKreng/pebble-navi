@@ -45,11 +45,11 @@
   "version": "1.0.0",
   "scripts": {
     "tsc": "tsc",
-    "build": "tsc && pebble build",
-    "start": "npx tsc && pebble build && pebble install --emulator emery",
-    "debug": "pkill -x qemu-pebble && sleep 1 && pebble wipe && pebble clean && npx tsc && pebble build && pebble install --emulator emery & pebble logs --emulator emery",
+    "build": "tsc; pebble build",
+    "start": "npx tsc; pebble build; pebble install --emulator emery",
+    "debug": "pkill -x qemu-pebble; sleep 1; pebble wipe; pebble clean; npx tsc; pebble build; pebble install --emulator emery; pebble logs --emulator emery",
     "screenshot": "pebble screenshot screenshot.png",
-    "push": "npx tsc && pebble build && pebble install --phone",
+    "push": "npx tsc; pebble build; pebble install --phone",
     "wipe": "pebble wipe",
     "format": "prettier --write \"src/**/*.ts\""
   },

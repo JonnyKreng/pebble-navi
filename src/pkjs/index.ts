@@ -92,7 +92,7 @@ fromEvent(Pebble, 'ready')
       });
 
       navigationWatcher = navigator.geolocation.watchPosition(
-        (pos) => location.next(pos),
+        (pos) => {}, // location.next(pos),
         console.error,
         {
           enableHighAccuracy: true,
@@ -111,7 +111,7 @@ fromEvent(Pebble, 'ready')
         .subscribe(() => {
           // Generate random position events
           latitude += (Math.random() - 0.2) / 1000;
-          latitude += (Math.random() - 0.2) / 1000;
+          longitude += (Math.random() - 0.2) / 1000;
           bering += 10;
           bering = bering % 360;
 

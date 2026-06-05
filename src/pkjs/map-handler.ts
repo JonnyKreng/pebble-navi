@@ -9,6 +9,7 @@ import {
   switchMap,
   takeUntil,
   tap,
+  throttleTime,
 } from 'rxjs';
 import { MapState, renderForState, RenderOutput } from './server/stateRenderer';
 import { Destination } from './index';
@@ -54,6 +55,7 @@ export class MapHandler {
             state.mode !== undefined,
         ),
         map((state: PartialMapState) => <MapState>state),
+        throttleTime(3000, undefined, { leading: true, trailing: true }),
         filter(() => !this.rendering),
         tap(() => (this.rendering = true)),
         switchMap((state) => from(renderForState(state, this.existingRoute))),
@@ -149,7 +151,9 @@ export class MapHandler {
         totalChunks,
     );
 
-    const sendChunk = (index: number): void => {
+    const MAX_RETRIES = 3;
+
+    const sendChunk = (index: number, retries: number = MAX_RETRIES): void => {
       if (index >= totalChunks) {
         this.sending = false;
         console.log('Finished sending chunk ' + totalChunks);
@@ -177,7 +181,14 @@ export class MapHandler {
         },
         (err: any) => {
           console.error('Chunk ' + index + ' failed: ' + JSON.stringify(err.error));
-          this.sending = false;
+          if (retries > 0) {
+            const delay = (MAX_RETRIES - retries + 1) * 1000;
+            console.log('Retrying chunk ' + index + ' in ' + delay + 'ms (' + retries + ' retries left)');
+            setTimeout(() => sendChunk(index, retries - 1), delay);
+          } else {
+            console.error('Giving up on chunk ' + index + ' after ' + MAX_RETRIES + ' retries');
+            this.sending = false;
+          }
         },
       );
     };

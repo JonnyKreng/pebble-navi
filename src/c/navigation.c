@@ -31,7 +31,6 @@ static int s_bitmap_height = SCREEN_H;
 static int s_bitmap_data_size = SCREEN_W * SCREEN_H;
 static uint16_t s_palette_rgb565[64];
 static int s_palette_received = 1;
-static bool s_transfer_active = false;
 
 static void apply_palette(GBitmap* bmp)
 {
@@ -194,8 +193,6 @@ void navigation_destroy_map_layer(void)
 
 bool navigation_handle_message(DictionaryIterator* iter)
 {
-    APP_LOG(APP_LOG_LEVEL_DEBUG, "Handle navigation");
-
     Tuple* idx = dict_find(iter, MESSAGE_KEY_IMAGE_CHUNK_INDEX);
     Tuple* total = dict_find(iter, MESSAGE_KEY_IMAGE_CHUNKS_TOTAL);
     Tuple* data = dict_find(iter, MESSAGE_KEY_IMAGE_CHUNK_DATA);
@@ -204,7 +201,6 @@ bool navigation_handle_message(DictionaryIterator* iter)
     {
         if (idx->value->uint32 == 0)
         {
-            s_transfer_active = true;
             s_chunks_received = 0;
             s_decompressed_offset = 0;
             s_rle_state = 0;

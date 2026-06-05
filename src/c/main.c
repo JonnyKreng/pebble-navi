@@ -9,16 +9,24 @@ static TextLayer* s_next_step_layer;
 static TextLayer* s_waiting_layer;
 
 static bool s_js_ready = false;
+static bool s_pending = false;
+static uint32_t s_pending_key;
+static int s_pending_val;
+
+static void try_flush_pending(void)
+{
+    if (!s_pending) return;
+    DictionaryIterator* iter;
+    AppMessageResult result = app_message_outbox_begin(&iter);
+    if (result != APP_MSG_OK) return;
+    dict_write_int8(iter, s_pending_key, s_pending_val);
+    app_message_outbox_send();
+    s_pending = false;
+}
 
 static void inbox_received(DictionaryIterator* iter, void* ctx)
 {
     APP_LOG(APP_LOG_LEVEL_DEBUG, "Received AppMessage");
-
-    Tuple* t = dict_read_first(iter);
-    while (t) {
-        APP_LOG(APP_LOG_LEVEL_DEBUG, "  key=%lu", t->key);
-        t = dict_read_next(iter);
-    }
 
     if (!s_js_ready)
     {
@@ -84,24 +92,25 @@ static void outbox_failed(DictionaryIterator* iterator, AppMessageResult reason,
 static void outbox_sent(DictionaryIterator* iterator, void* context)
 {
     APP_LOG(APP_LOG_LEVEL_INFO, "Outbox send success!");
+    try_flush_pending();
+}
+
+static void enqueue_send(uint32_t key, int value)
+{
+    s_pending = true;
+    s_pending_key = key;
+    s_pending_val = value;
+    try_flush_pending();
 }
 
 static void send_zoom_dir(int dir)
 {
-    DictionaryIterator* iter;
-    AppMessageResult result = app_message_outbox_begin(&iter);
-    if (result != APP_MSG_OK) return;
-    dict_write_int8(iter, MESSAGE_KEY_ZOOM_DIR, dir);
-    app_message_outbox_send();
+    enqueue_send(MESSAGE_KEY_ZOOM_DIR, dir);
 }
 
 static void menu_send_callback(uint32_t key, uint32_t value)
 {
-    DictionaryIterator* iter;
-    AppMessageResult result = app_message_outbox_begin(&iter);
-    if (result != APP_MSG_OK) return;
-    dict_write_int8(iter, key, value);
-    app_message_outbox_send();
+    enqueue_send(key, value);
 }
 
 static void select_click_handler(ClickRecognizerRef recognizer, void* context)
