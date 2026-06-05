@@ -28,7 +28,8 @@
             "NEXT_STEP_NAME",
             "NEXT_STEP_DISTANCE",
             "SAVE_CURRENT_LOCATION",
-            "DEST_NAMES_TOTAL"
+            "DEST_NAMES_TOTAL",
+            "JSReady"
         ],
         "projectType": "native",
         "resources": {

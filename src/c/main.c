@@ -6,9 +6,27 @@ static Window* s_main_window;
 static Layer* s_map_layer;
 static TextLayer* s_route_summary_layer;
 static TextLayer* s_next_step_layer;
+static TextLayer* s_waiting_layer;
+static bool s_js_ready = false;
+
+static void send_chunk_size(void);
 
 static void inbox_received(DictionaryIterator* iter, void* ctx)
 {
+    if (!s_js_ready)
+    {
+        Tuple* js_ready = dict_find(iter, MESSAGE_KEY_JSReady);
+        if (js_ready)
+        {
+            s_js_ready = true;
+            layer_remove_from_parent(text_layer_get_layer(s_waiting_layer));
+            text_layer_destroy(s_waiting_layer);
+            s_waiting_layer = NULL;
+            send_chunk_size();
+            return;
+        }
+    }
+
     if (navigation_handle_message(iter)) return;
     if (menu_handle_message(iter)) return;
 
@@ -158,7 +176,13 @@ static void main_window_load(Window* window)
 
     menu_init(window_layer, menu_send_callback);
 
-    send_chunk_size();
+    s_waiting_layer = text_layer_create(GRect(0, 0, bounds.size.w, bounds.size.h));
+    text_layer_set_background_color(s_waiting_layer, GColorBlack);
+    text_layer_set_text_color(s_waiting_layer, GColorWhite);
+    text_layer_set_font(s_waiting_layer, fonts_get_system_font(FONT_KEY_GOTHIC_24));
+    text_layer_set_text_alignment(s_waiting_layer, GTextAlignmentCenter);
+    text_layer_set_text(s_waiting_layer, "Waiting for\nphone...");
+    layer_add_child(window_layer, text_layer_get_layer(s_waiting_layer));
 }
 
 static void main_window_unload(Window* window)
@@ -166,6 +190,11 @@ static void main_window_unload(Window* window)
     navigation_destroy_map_layer();
     text_layer_destroy(s_route_summary_layer);
     text_layer_destroy(s_next_step_layer);
+    if (s_waiting_layer)
+    {
+        text_layer_destroy(s_waiting_layer);
+        s_waiting_layer = NULL;
+    }
 }
 
 static void init()

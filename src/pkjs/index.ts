@@ -24,6 +24,7 @@ let pipeline: Pipeline | null = null;
 let destinations: Destination[] = [];
 let rendering = false;
 let sendGeneration = 0;
+let lastPosition: { lat: number; lng: number } | null = null;
 
 function loadDestinations(): void {
   try {
@@ -65,7 +66,16 @@ function sendBitmapToWatch(pixels: Uint8Array, onDone?: () => void): void {
   const compressed = rleEncode(pixels);
   const totalChunks = Math.ceil(compressed.length / CHUNK_SIZE);
   if (DEBUG_PNG)
-    console.log('sendBitmapToWatch: gen=' + gen + ' pixels=' + pixels.length + ' bytes, compressed=' + compressed.length + ', chunks=' + totalChunks);
+    console.log(
+      'sendBitmapToWatch: gen=' +
+        gen +
+        ' pixels=' +
+        pixels.length +
+        ' bytes, compressed=' +
+        compressed.length +
+        ', chunks=' +
+        totalChunks,
+    );
 
   sendChunk(0);
 
@@ -146,8 +156,7 @@ function refresh(): void {
   pipeline
     .render()
     .then(function (output) {
-      if (DEBUG_PNG)
-        console.log('render done: pixels=' + output.pixels.length + ' bytes');
+      if (DEBUG_PNG) console.log('render done: pixels=' + output.pixels.length + ' bytes');
       sendBitmapToWatch(output.pixels, function () {
         rendering = false;
       });
@@ -161,6 +170,8 @@ function refresh(): void {
 
 function locationSuccess(pos: GeolocationPosition): void {
   if (!pipeline) return;
+
+  lastPosition = { lat: pos.coords.latitude, lng: pos.coords.longitude };
 
   pipeline.setState({
     currentPos: { lat: pos.coords.latitude, lng: pos.coords.longitude },
@@ -177,22 +188,37 @@ function sendDestinationsToWatch(): void {
   const names = destinations.map(function (d) {
     return d.name || d.lat + ',' + d.lng;
   });
-  for (let i = 0; i < names.length; i++) {
-    Pebble.sendAppMessage(
-      {
-        SELECTED_DEST_INDEX: i,
-        ROUTE_DISTANCE: 0,
-        ROUTE_DURATION: 0,
-        NEXT_STEP_NAME: names[i],
-      },
-      function () {},
-      function () {},
-    );
-  }
+  Pebble.sendAppMessage(
+    { DEST_NAMES_TOTAL: names.length },
+    function () {
+      for (let i = 0; i < names.length; i++) {
+        Pebble.sendAppMessage(
+          {
+            SELECTED_DEST_INDEX: i,
+            NEXT_STEP_NAME: names[i],
+          },
+          function () {},
+          function () {},
+        );
+      }
+    },
+    function () {},
+  );
 }
 
 Pebble.addEventListener('ready', function () {
   console.log('PebbleKit JS ready!');
+
+  Pebble.sendAppMessage(
+    { JSReady: 1 },
+    function () {
+      console.log('JSReady sent to watch');
+    },
+    function (err) {
+      console.log('JSReady send failed: ' + err);
+    },
+  );
+
   loadDestinations();
 
   const info = Pebble.getActiveWatchInfo();
@@ -209,7 +235,8 @@ Pebble.addEventListener('ready', function () {
 
   navigator.geolocation.getCurrentPosition(
     function (pos) {
-      if(!pipeline){
+      lastPosition = { lat: pos.coords.latitude, lng: pos.coords.longitude };
+      if (!pipeline) {
         pipeline = createPipeline({
           origin: { lat:  pos.coords.latitude, lng: pos.coords.longitude },
           zoom: 14,
@@ -217,10 +244,8 @@ Pebble.addEventListener('ready', function () {
           width: w,
           height: h,
         });
-      }
-      else{
+      } else {
         pipeline.setState({
-          origin: { lat: pos.coords.latitude, lng: pos.coords.longitude },
           currentPos: { lat: pos.coords.latitude, lng: pos.coords.longitude },
           bearing: pos.coords.heading || undefined,
         });
@@ -264,7 +289,12 @@ Pebble.addEventListener('appmessage', function (e) {
   if (payload.SELECTED_DEST_INDEX != null && destinations[payload.SELECTED_DEST_INDEX]) {
     if (!pipeline) return;
     const dest = destinations[payload.SELECTED_DEST_INDEX];
-    pipeline.setState({ dest: { lat: dest.lat, lng: dest.lng } });
+    const origin = lastPosition ||
+      pipeline.getState().currentPos || { lat: dest.lat, lng: dest.lng };
+    pipeline.setState({
+      dest: { lat: dest.lat, lng: dest.lng },
+      origin: { lat: origin.lat, lng: origin.lng },
+    });
     refresh();
   }
 });
