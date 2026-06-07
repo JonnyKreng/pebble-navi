@@ -23,7 +23,7 @@ Turn-by-turn navigation for Pebble smartwatches.
 - Map rendering with OpenStreetMap tiles
 - Destination selection from saved locations
 - Save current location
-- Supports Pebble Time 2 (emery), Pebble Time Round (gabbro), and Pebble Classic/Steel (flint)
+- Supports Pebble Time 2 (emery), Pebble Time Round (gabbro), and Pebble 2 Duo (flint)
 
 ## Architecture
 
