@@ -39,6 +39,36 @@ static void update_route_label(void)
              "Mode: %s", names[s_route_mode]);
 }
 
+static void draw_about(GContext* ctx, GRect bounds)
+{
+    graphics_context_set_fill_color(ctx, GColorBlack);
+    graphics_fill_rect(ctx, bounds, 0, GCornerNone);
+    graphics_context_set_text_color(ctx, GColorWhite);
+
+    const char* lines[] = {
+        "Map data:",
+        "(c) OpenStreetMap",
+        "contributors (ODbL)",
+        "",
+        "Full attributions",
+        "in phone settings",
+    };
+    int num_lines = sizeof(lines) / sizeof(lines[0]);
+    int line_h = 18;
+    int total_h = num_lines * line_h;
+    int y = bounds.origin.y + (bounds.size.h - total_h) / 2;
+
+    for (int i = 0; i < num_lines; i++)
+    {
+        GRect r = GRect(0, y, bounds.size.w, line_h);
+        graphics_draw_text(ctx, lines[i],
+                           fonts_get_system_font(FONT_KEY_GOTHIC_18),
+                           r, GTextOverflowModeTrailingEllipsis,
+                           GTextAlignmentCenter, NULL);
+        y += line_h;
+    }
+}
+
 static void menu_layer_update_proc(Layer* layer, GContext* ctx)
 {
     GRect bounds = layer_get_bounds(layer);
@@ -46,14 +76,25 @@ static void menu_layer_update_proc(Layer* layer, GContext* ctx)
     graphics_context_set_fill_color(ctx, GColorBlack);
     graphics_fill_rect(ctx, bounds, 0, GCornerNone);
 
+    if (s_mode == MODE_ABOUT)
+    {
+        draw_about(ctx, bounds);
+        return;
+    }
+
     if (s_mode == MODE_MAIN_MENU)
     {
-        int num_visible = s_has_route ? 5 : 4;
-        int total_h = num_visible * ITEM_HEIGHT;
+        int num_visible = s_has_route ? 6 : 5;
+        int item_h = ITEM_HEIGHT;
+        if (num_visible * item_h > bounds.size.h)
+        {
+            item_h = bounds.size.h / num_visible;
+        }
+        int total_h = num_visible * item_h;
         int start_y = (bounds.size.h - total_h) / 2;
 
         int drawn = 0;
-        for (int slot = 0; slot < 5; slot++)
+        for (int slot = 0; slot < 6; slot++)
         {
             if (slot == 1 && !s_has_route) continue;
 
@@ -64,10 +105,11 @@ static void menu_layer_update_proc(Layer* layer, GContext* ctx)
                 case 1: text = "Stop Routing";       break;
                 case 2: text = "Save Location";      break;
                 case 3: text = s_route_label;        break;
-                default: text = s_backlight_label;   break;
+                case 4: text = s_backlight_label;    break;
+                default: text = "About";             break;
             }
 
-            GRect item_rect = GRect(0, start_y + drawn * ITEM_HEIGHT, bounds.size.w, ITEM_HEIGHT);
+            GRect item_rect = GRect(0, start_y + drawn * item_h, bounds.size.w, item_h);
 
             if (drawn == s_selected_index)
             {
@@ -216,7 +258,7 @@ bool menu_handle_down(void)
     int max_index;
     if (s_mode == MODE_MAIN_MENU)
     {
-        max_index = s_has_route ? 4 : 3;
+        max_index = s_has_route ? 5 : 4;
     }
     else
     {
@@ -237,7 +279,7 @@ bool menu_handle_select(void)
 
     if (s_mode == MODE_MAIN_MENU)
     {
-        static const int slot_noroute[4] = {0, 2, 3, 4};
+        static const int slot_noroute[5] = {0, 2, 3, 4, 5};
         int slot = s_has_route ? s_selected_index : slot_noroute[s_selected_index];
 
         switch (slot)
@@ -261,13 +303,24 @@ bool menu_handle_select(void)
                 if (s_send_cb) s_send_cb(MESSAGE_KEY_ROUTE_MODE, s_route_mode);
                 layer_mark_dirty(s_menu_layer);
                 break;
-            default:
+            case 4:
                 s_backlight_on = !s_backlight_on;
                 light_enable(s_backlight_on);
                 update_backlight_label();
                 layer_mark_dirty(s_menu_layer);
                 break;
+            default:
+                s_mode = MODE_ABOUT;
+                s_selected_index = 0;
+                layer_mark_dirty(s_menu_layer);
+                break;
         }
+    }
+    else if (s_mode == MODE_ABOUT)
+    {
+        s_mode = MODE_MAIN_MENU;
+        s_selected_index = s_has_route ? 5 : 4;
+        layer_mark_dirty(s_menu_layer);
     }
     else if (s_mode == MODE_DEST_LIST)
     {
@@ -282,7 +335,7 @@ bool menu_handle_back(void)
 {
     if (s_mode == MODE_MAP) return false;
 
-    if (s_mode == MODE_DEST_LIST)
+    if (s_mode == MODE_DEST_LIST || s_mode == MODE_ABOUT)
     {
         s_mode = MODE_MAIN_MENU;
         s_selected_index = 0;

@@ -1,6 +1,5 @@
 import type { Destination } from './index';
 import { loadDestinations, saveDestinations } from './helper';
-import Event = PebbleKit.Event;
 
 const OSR_API_KEY = 'ors_api_key';
 
@@ -54,6 +53,9 @@ export function buildSettings(): string {
   if (!key)
     html +=
       '<div class="notice">Coordinates (lat,lng) always work. For address lookup, create an account at <a href="https://account.heigit.org/manage/key" target="_blank">account.heigit.org/manage/key</a> and paste the API key above. I am not affiliated with heigit.</div>';
+  html += '<div class="section-title">Attributions</div>';
+  html +=
+    '<div class="notice">&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank">OpenStreetMap contributors</a>. Map data licensed under the Open Database License (ODbL). Routing by <a href="http://project-osrm.org/" target="_blank">OSRM</a>. Geocoding by <a href="https://openrouteservice.org/" target="_blank">OpenRouteService</a>.</div>';
   html += '<script>';
   html += 'var dests = ' + JSON.stringify(destinations) + ';';
   html += 'function render(){var l=document.getElementById("list");';

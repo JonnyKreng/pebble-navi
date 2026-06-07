@@ -19,7 +19,7 @@ import { messageQueue } from './message-queue';
 type PartialMapState = Partial<MapState>;
 
 const ENABLE_LOGS = false;
-const DEFAULT_ZOOM = 14;
+const DEFAULT_ZOOM = 16;
 const DEFAULT_MODE = 'walking';
 const DEFAULT_CHUNK = 2048;
 
@@ -50,9 +50,9 @@ export class MapHandler {
     if (info.platform === 'emery') {
       w = 200;
       h = 228;
-    } else if (info.platform === 'chalk') {
-      w = 180;
-      h = 180;
+    } else if (info.platform === 'gabbro') {
+      w = 260;
+      h = 260;
     }
     if (ENABLE_LOGS) console.log('Platform=' + info.platform + ' size=' + w + 'x' + h);
 

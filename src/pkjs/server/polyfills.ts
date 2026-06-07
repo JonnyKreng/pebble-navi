@@ -21,7 +21,7 @@ if (typeof _global.fetch === 'undefined') {
         }
       }
       xhr.responseType = 'arraybuffer';
-      xhr.timeout = 10000;
+      xhr.timeout = 20000;
       xhr.ontimeout = () => {
         console.error('fetch polyfill');
         return reject(new Error('fetch polyfill: timeout'));

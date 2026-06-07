@@ -6,6 +6,7 @@ typedef enum {
     MODE_MAP,
     MODE_MAIN_MENU,
     MODE_DEST_LIST,
+    MODE_ABOUT,
 } MenuMode;
 
 typedef enum {
