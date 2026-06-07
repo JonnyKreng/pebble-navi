@@ -43,7 +43,7 @@
       "watchface": false
     }
   },
-  "version": "1.0.0",
+  "version": "1.0.1",
   "scripts": {
     "tsc": "tsc",
     "build": "tsc; pebble build",
