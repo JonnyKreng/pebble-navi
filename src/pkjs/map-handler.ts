@@ -41,12 +41,14 @@ export class MapHandler {
   private sending = false;
   private rendering = false;
   private lastRecalc = 0;
+  private isFlint = false;
   private readonly mapState = new BehaviorSubject<PartialMapState>({});
 
   constructor(destroyApp: Observable<void>) {
     const info = Pebble.getActiveWatchInfo();
     let w = 144;
     let h = 168;
+    this.isFlint = info.platform === 'flint';
     if (info.platform === 'emery') {
       w = 200;
       h = 228;
@@ -93,7 +95,7 @@ export class MapHandler {
             }
           }
         }),
-        switchMap((state) => from(renderForState(state, this.existingRoute))),
+        switchMap((state) => from(renderForState(state, this.existingRoute, this.isFlint))),
         tap(() => (this.rendering = false)),
         tap((output) => this.onMapRendered(output)),
         catchError((err) => {
@@ -188,8 +190,8 @@ export class MapHandler {
   private onMapRendered(renderOutput: RenderOutput): void {
     this.existingRoute = renderOutput.route;
 
-    this.sendBitmapToWatch(renderOutput.pixels);
     this.sendRouteToWatch(renderOutput);
+    this.sendBitmapToWatch(renderOutput.pixels);
   }
 
   private sendBitmapToWatch(pixels: Uint8Array): void {

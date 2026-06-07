@@ -27,7 +27,7 @@ export function rleEncode(data: Uint8Array): Uint8Array {
     while (i + runLen < data.length && data[i + runLen] === val && runLen < 256) {
       runLen++;
     }
-    if (runLen >= 2) {
+    if (runLen >= 2 || val >= 64) {
       out.push(64, runLen - 1, val);
       i += runLen;
     } else {

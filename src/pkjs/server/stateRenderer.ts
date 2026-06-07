@@ -1,7 +1,7 @@
 import { TILE_SIZE, getTile, worldPixel } from './osm.js';
 import { fetchRoute, findNextStep, type RouteResult, type RouteStep } from './routing.js';
 import { renderMap } from './renderer.js';
-import { quantizeToPebble } from './pebble-palette.js';
+import { quantizeToPebble, quantizeToPebble2Bit } from './pebble-palette.js';
 
 export interface MapState {
   currentPos: { lat: number; lng: number };
@@ -26,6 +26,7 @@ export interface RenderOutput {
 export async function renderForState(
   s: MapState,
   existingRoute?: RouteResult,
+  isFlint?: boolean,
 ): Promise<RenderOutput> {
   let center = s.currentPos || s.origin;
 
@@ -68,7 +69,9 @@ export async function renderForState(
     tiles,
   });
 
-  const pixels = quantizeToPebble(rgba, s.width, s.height).pixels;
+  const pixels = isFlint
+    ? quantizeToPebble2Bit(rgba, s.width, s.height).pixels
+    : quantizeToPebble(rgba, s.width, s.height).pixels;
 
   let nextStep: { step: RouteStep; remainingDist: number } | undefined;
   if (route && s.currentPos) {

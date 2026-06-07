@@ -35,7 +35,8 @@
     "sdkVersion": "3",
     "targetPlatforms": [
       "emery",
-      "gabbro"
+      "gabbro",
+      "flint"
     ],
     "uuid": "64f06958-8a2e-4709-b672-0c3a859e7914",
     "watchapp": {

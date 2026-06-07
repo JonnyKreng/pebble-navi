@@ -36,6 +36,15 @@ static int s_palette_received = 1;
 
 static void apply_palette(GBitmap* bmp)
 {
+#ifdef PBL_PLATFORM_FLINT
+    GColor8* pal = malloc(4 * sizeof(GColor8));
+    if (!pal) return;
+    pal[0].argb = 0xC0;
+    pal[1].argb = 0xD5;
+    pal[2].argb = 0xEA;
+    pal[3].argb = 0xFF;
+    gbitmap_set_palette(bmp, pal, true);
+#else
     GColor8* pal = malloc(64 * sizeof(GColor8));
     if (!pal) return;
     if (s_palette_received)
@@ -64,6 +73,7 @@ static void apply_palette(GBitmap* bmp)
         for (int i = 0; i < 64; i++) pal[i].argb = 0xC0 | i;
     }
     gbitmap_set_palette(bmp, pal, true);
+#endif
 }
 
 static void time_tick_handler(struct tm* tick_time, TimeUnits units_changed)
@@ -225,7 +235,13 @@ Layer* navigation_create_map_layer(GRect bounds)
         s_bitmap_data_size = MAX_BITMAP_DATA_SIZE;
     }
 
+#ifdef PBL_PLATFORM_FLINT
+    s_bitmap = gbitmap_create_blank(GSize(s_bitmap_width, s_bitmap_height), GBitmapFormat2BitPalette);
+    s_bitmap_data_size /= 4;
+#else
     s_bitmap = gbitmap_create_blank(GSize(s_bitmap_width, s_bitmap_height), GBitmapFormat8Bit);
+#endif
+
     if (!s_bitmap) {
         APP_LOG(APP_LOG_LEVEL_ERROR, "Failed to create GBitmap!");
     } else {
