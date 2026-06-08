@@ -192,22 +192,32 @@ var MapHandler = /** @class */ (function () {
     };
     MapHandler.prototype.sendRouteToWatch = function (output) {
         var dict = {};
+        var units = (0, helper_1.loadUnits)();
         if (!output.route) {
             dict.NAV_INFO_LINE1 = 'Select a Destination';
             dict.NAV_INFO_LINE2 = 'Add new Destinations in App Settings';
             dict.ROUTE_ACTIVE = 0;
         }
         else {
-            var d = Math.round(output.route.distance);
+            var d = output.route.distance;
             var m = Math.round(output.route.duration / 60);
             var h = Math.floor(m / 60);
             var mins = m % 60;
             var time = h > 0 ? (mins > 0 ? "".concat(h, " h ").concat(mins, " min") : "".concat(h, " h")) : "".concat(m, " min");
-            dict.NAV_INFO_LINE1 = d >= 1000 ? "".concat((d / 1000).toFixed(1), " km  ").concat(time) : "".concat(d, " m  ").concat(time);
+            if (units === 'imperial') {
+                var mi = d / 1609.344;
+                dict.NAV_INFO_LINE1 = mi >= 0.1 ? "".concat(mi.toFixed(1), " mi  ").concat(time) : "".concat(Math.round(d / 0.3048), " ft  ").concat(time);
+            }
+            else {
+                dict.NAV_INFO_LINE1 = d >= 1000 ? "".concat((d / 1000).toFixed(1), " km  ").concat(time) : "".concat(Math.round(d), " m  ").concat(time);
+            }
             dict.ROUTE_ACTIVE = 1;
             var ns = output.nextStep;
             if (ns && Math.round(ns.remainingDist) > 0) {
-                dict.NAV_INFO_LINE2 = "".concat(ns.step.modifier || '', " ").concat((0, helper_1.asciiNormalize)(ns.step.name) || '', " (").concat(Math.round(ns.remainingDist), " m)");
+                var stepDist = units === 'imperial'
+                    ? "".concat(Math.round(ns.remainingDist / 0.3048), " ft")
+                    : "".concat(Math.round(ns.remainingDist), " m");
+                dict.NAV_INFO_LINE2 = "".concat(ns.step.modifier || '', " ").concat((0, helper_1.asciiNormalize)(ns.step.name) || '', " (").concat(stepDist, ")");
             }
             else {
                 dict.NAV_INFO_LINE2 = '';

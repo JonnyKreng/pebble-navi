@@ -7,6 +7,7 @@ var OSR_API_KEY = 'ors_api_key';
 function buildSettings() {
     var key = localStorage.getItem(OSR_API_KEY) || '';
     var destinations = (0, helper_1.loadDestinations)();
+    var units = (0, helper_1.loadUnits)();
     var html = '';
     html +=
         '<!DOCTYPE html><html><head><meta name="viewport" content="width=device-width, initial-scale=1">';
@@ -49,6 +50,15 @@ function buildSettings() {
         '<input class="key-input" type="text" id="apiKey" placeholder="OpenRouteService API key" value="' +
             key +
             '">';
+    html += '<div class="section-title">Units</div>';
+    html += '<div style="display:flex;gap:8px;margin:8px 0">';
+    html += '<label style="flex:1;text-align:center;padding:8px;background:#0f3460;border-radius:6px;cursor:pointer">';
+    html += '<input type="radio" name="units" value="metric"' + (units === 'metric' ? ' checked' : '') + '> km / m';
+    html += '</label>';
+    html += '<label style="flex:1;text-align:center;padding:8px;background:#0f3460;border-radius:6px;cursor:pointer">';
+    html += '<input type="radio" name="units" value="imperial"' + (units === 'imperial' ? ' checked' : '') + '> mi / ft';
+    html += '</label>';
+    html += '</div>';
     html += '<button onclick="saveAndClose()">Save & Close</button>';
     if (!key)
         html +=
@@ -74,7 +84,7 @@ function buildSettings() {
     html +=
         'function addDest(){var addr=document.getElementById("addr").value.trim();if(!addr)return;var nm=document.getElementById("name").value.trim();var parts=addr.split(",").map(function(s){return parseFloat(s.trim())});if(parts.length===2&&!isNaN(parts[0])&&!isNaN(parts[1])){dests.push({lat:parts[0],lng:parts[1],name:nm||addr});document.getElementById("addr").value="";document.getElementById("name").value="";render();return}var xhr=new XMLHttpRequest();xhr.open("GET","https://api.openrouteservice.org/geocode/search?api_key="+encodeURIComponent(document.getElementById("apiKey").value)+"&text="+encodeURIComponent(addr)+"&size=1",true);xhr.onload=function(){if(xhr.status>=200&&xhr.status<300){var d=JSON.parse(xhr.responseText);if(d.features&&d.features.length){var c=d.features[0].geometry.coordinates;dests.push({lat:c[1],lng:c[0],name:nm||d.features[0].properties.label||addr});document.getElementById("addr").value="";document.getElementById("name").value="";render()}else{alert("Not found")}}};xhr.send()}';
     html +=
-        'function saveAndClose(){var payload={destinations:dests,ors_api_key:document.getElementById("apiKey").value};document.location="pebblejs://close#"+encodeURIComponent(JSON.stringify(payload))}';
+        'function saveAndClose(){var u=document.querySelector(\'input[name="units"]:checked\');var payload={destinations:dests,ors_api_key:document.getElementById("apiKey").value,units:u?u.value:"metric"};document.location="pebblejs://close#"+encodeURIComponent(JSON.stringify(payload))}';
     html += 'render();';
     html += '<\/script></body></html>';
     return html;
@@ -90,6 +100,9 @@ function saveSettings(response) {
         }
         else {
             localStorage.removeItem(OSR_API_KEY);
+        }
+        if (data.units) {
+            (0, helper_1.saveUnits)(data.units);
         }
     }
     catch (err) {

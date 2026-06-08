@@ -1,10 +1,19 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
+exports.loadUnits = loadUnits;
+exports.saveUnits = saveUnits;
 exports.loadDestinations = loadDestinations;
 exports.saveDestinations = saveDestinations;
 exports.rleEncode = rleEncode;
 exports.asciiNormalize = asciiNormalize;
 var DESTINATIONS_KEY = 'destinations';
+var UNITS_KEY = 'units';
+function loadUnits() {
+    return localStorage.getItem(UNITS_KEY) || 'metric';
+}
+function saveUnits(units) {
+    localStorage.setItem(UNITS_KEY, units);
+}
 function loadDestinations() {
     try {
         var saved = localStorage.getItem(DESTINATIONS_KEY);
