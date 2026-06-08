@@ -1,10 +1,7 @@
 import type { Destination } from './index';
 import { loadDestinations, loadUnits, saveDestinations, saveUnits } from './helper';
 
-const OSR_API_KEY = 'ors_api_key';
-
 export function buildSettings(): string {
-  const key = localStorage.getItem(OSR_API_KEY) || '';
   const destinations = loadDestinations();
   const units = loadUnits();
 
@@ -45,11 +42,6 @@ export function buildSettings(): string {
   html += '<ul id="suggestions" class="suggestions"></ul>';
   html += '</div>';
   html += '<button onclick="addDest()">Add Destination</button>';
-  html += '<div class="section-title">API Key</div>';
-  html +=
-    '<input class="key-input" type="text" id="apiKey" placeholder="OpenRouteService API key" value="' +
-    key +
-    '">';
   html += '<div class="section-title">Units</div>';
   html += '<div style="display:flex;gap:8px;margin:8px 0">';
   html += '<label style="flex:1;text-align:center;padding:8px;background:#0f3460;border-radius:6px;cursor:pointer">';
@@ -60,12 +52,9 @@ export function buildSettings(): string {
   html += '</label>';
   html += '</div>';
   html += '<button onclick="saveAndClose()">Save & Close</button>';
-  if (!key)
-    html +=
-      '<div class="notice">Coordinates (lat,lng) always work. For address lookup, create an account at <a href="https://account.heigit.org/manage/key" target="_blank">account.heigit.org/manage/key</a> and paste the API key above. I am not affiliated with heigit.</div>';
   html += '<div class="section-title">Attributions</div>';
   html +=
-    '<div class="notice">&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank">OpenStreetMap contributors</a>. Map data licensed under the Open Database License (ODbL). Routing by <a href="http://project-osrm.org/" target="_blank">OSRM</a>. Geocoding by <a href="https://openrouteservice.org/" target="_blank">OpenRouteService</a>.</div>';
+    '<div class="notice">&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank">OpenStreetMap contributors</a>. Map data licensed under the Open Database License (ODbL). Routing by <a href="http://project-osrm.org/" target="_blank">OSRM</a>. Geocoding by <a href="https://photon.komoot.io" target="_blank">Photon</a> (Komoot).</div>';
   html += '<script>';
   html += 'var dests = ' + JSON.stringify(destinations) + ';';
   html += 'function render(){var l=document.getElementById("list");';
@@ -76,15 +65,15 @@ export function buildSettings(): string {
   html += 'function remove(i){dests.splice(i,1);render();}';
   html += 'var _timer=null;';
   html +=
-    'document.getElementById("addr").addEventListener("input",function(){clearTimeout(_timer);var v=this.value.trim();var sug=document.getElementById("suggestions");if(v.length<3||/^-?\\d/.test(v)){sug.style.display="none";return}_timer=setTimeout(function(){var xhr=new XMLHttpRequest();xhr.open("GET","https://api.openrouteservice.org/geocode/autocomplete?api_key="+encodeURIComponent(document.getElementById("apiKey").value)+"&text="+encodeURIComponent(v)+"&size=5",true);xhr.onload=function(){if(xhr.status>=200&&xhr.status<300){var data=JSON.parse(xhr.responseText);if(data.features&&data.features.length){sug.innerHTML=data.features.map(function(f,i){return"<li onclick=\'pickSuggestion("+i+")\'>"+(f.properties.label||f.properties.name)+"</li>"}).join("");window._sugs=data.features;sug.style.display="block"}else{sug.style.display="none"}}};xhr.send()},300)});';
+    'document.getElementById("addr").addEventListener("input",function(){clearTimeout(_timer);var v=this.value.trim();var sug=document.getElementById("suggestions");if(v.length<3||/^-?\\d/.test(v)){sug.style.display="none";return}_timer=setTimeout(function(){var xhr=new XMLHttpRequest();xhr.open("GET","https://photon.komoot.io/api/?q="+encodeURIComponent(v)+"&limit=7",true);xhr.onload=function(){if(xhr.status>=200&&xhr.status<300){var data=JSON.parse(xhr.responseText);if(data.features&&data.features.length){sug.innerHTML=data.features.map(function(f,i){var p=f.properties;var label=p.name+(p.city?", "+p.city:"")+(p.country?", "+p.country:"");return"<li onclick=\'pickSuggestion("+i+")\'>"+label+"</li>"}).join("");window._sugs=data.features;sug.style.display="block"}else{sug.style.display="none"}}};xhr.send()},300)});';
   html +=
     'document.getElementById("addr").addEventListener("blur",function(){setTimeout(function(){document.getElementById("suggestions").style.display="none"},200)});';
   html +=
-    'function pickSuggestion(i){var f=window._sugs[i];if(!f)return;var c=f.geometry.coordinates;var nm=document.getElementById("name").value.trim()||f.properties.label||f.properties.name;dests.push({lat:c[1],lng:c[0],name:nm});document.getElementById("addr").value="";document.getElementById("name").value="";document.getElementById("suggestions").style.display="none";window._sugs=null;render()}';
+    'function pickSuggestion(i){var f=window._sugs[i];if(!f)return;var c=f.geometry.coordinates;var nm=document.getElementById("name").value.trim()||f.properties.name;dests.push({lat:c[1],lng:c[0],name:nm});document.getElementById("addr").value="";document.getElementById("name").value="";document.getElementById("suggestions").style.display="none";window._sugs=null;render()}';
   html +=
-    'function addDest(){var addr=document.getElementById("addr").value.trim();if(!addr)return;var nm=document.getElementById("name").value.trim();var parts=addr.split(",").map(function(s){return parseFloat(s.trim())});if(parts.length===2&&!isNaN(parts[0])&&!isNaN(parts[1])){dests.push({lat:parts[0],lng:parts[1],name:nm||addr});document.getElementById("addr").value="";document.getElementById("name").value="";render();return}var xhr=new XMLHttpRequest();xhr.open("GET","https://api.openrouteservice.org/geocode/search?api_key="+encodeURIComponent(document.getElementById("apiKey").value)+"&text="+encodeURIComponent(addr)+"&size=1",true);xhr.onload=function(){if(xhr.status>=200&&xhr.status<300){var d=JSON.parse(xhr.responseText);if(d.features&&d.features.length){var c=d.features[0].geometry.coordinates;dests.push({lat:c[1],lng:c[0],name:nm||d.features[0].properties.label||addr});document.getElementById("addr").value="";document.getElementById("name").value="";render()}else{alert("Not found")}}};xhr.send()}';
+    'function addDest(){var addr=document.getElementById("addr").value.trim();if(!addr)return;var nm=document.getElementById("name").value.trim();var parts=addr.split(",").map(function(s){return parseFloat(s.trim())});if(parts.length===2&&!isNaN(parts[0])&&!isNaN(parts[1])){dests.push({lat:parts[0],lng:parts[1],name:nm||addr});document.getElementById("addr").value="";document.getElementById("name").value="";render();return}var xhr=new XMLHttpRequest();xhr.open("GET","https://photon.komoot.io/api/?q="+encodeURIComponent(addr)+"&limit=1",true);xhr.onload=function(){if(xhr.status>=200&&xhr.status<300){var d=JSON.parse(xhr.responseText);if(d.features&&d.features.length){var c=d.features[0].geometry.coordinates;dests.push({lat:c[1],lng:c[0],name:nm||d.features[0].properties.name||addr});document.getElementById("addr").value="";document.getElementById("name").value="";render()}else{alert("Not found")}}};xhr.send()}';
   html +=
-    'function saveAndClose(){var u=document.querySelector(\'input[name="units"]:checked\');var payload={destinations:dests,ors_api_key:document.getElementById("apiKey").value,units:u?u.value:"metric"};document.location="pebblejs://close#"+encodeURIComponent(JSON.stringify(payload))}';
+    'function saveAndClose(){var u=document.querySelector(\'input[name="units"]:checked\');var payload={destinations:dests,units:u?u.value:"metric"};document.location="pebblejs://close#"+encodeURIComponent(JSON.stringify(payload))}';
   html += 'render();';
   html += '<\/script></body></html>';
   return html;
@@ -95,11 +84,6 @@ export function saveSettings(response: string): Destination[] {
     const data = JSON.parse(decodeURIComponent(response));
     if (data.destinations) {
       saveDestinations(data.destinations);
-    }
-    if (data.ors_api_key) {
-      localStorage.setItem(OSR_API_KEY, data.ors_api_key);
-    } else {
-      localStorage.removeItem(OSR_API_KEY);
     }
     if (data.units) {
       saveUnits(data.units);
