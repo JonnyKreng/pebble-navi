@@ -11,24 +11,24 @@
     ],
     "displayName": "Navi App",
     "enableMultiJS": true,
-      "messageKeys": [
-        "REQUEST_WEATHER",
-        "IMAGE_CHUNK_INDEX",
-        "IMAGE_CHUNKS_TOTAL",
-        "IMAGE_CHUNK_DATA",
-        "ZOOM_DIR",
-        "REQUEST_DESTINATIONS",
-        "SELECTED_DEST_INDEX",
-        "SAVE_CURRENT_LOCATION",
-        "DEST_NAME",
-        "DEST_NAMES_TOTAL",
-        "STOP_ROUTING",
-        "NAV_INFO_LINE1",
-        "NAV_INFO_LINE2",
-        "ROUTE_ACTIVE",
-        "ROUTE_MODE",
-        "ROTATION_MODE"
-      ],
+    "messageKeys": [
+      "REQUEST_WEATHER",
+      "IMAGE_CHUNK_INDEX",
+      "IMAGE_CHUNKS_TOTAL",
+      "IMAGE_CHUNK_DATA",
+      "ZOOM_DIR",
+      "REQUEST_DESTINATIONS",
+      "SELECTED_DEST_INDEX",
+      "SAVE_CURRENT_LOCATION",
+      "DEST_NAME",
+      "DEST_NAMES_TOTAL",
+      "STOP_ROUTING",
+      "NAV_INFO_LINE1",
+      "NAV_INFO_LINE2",
+      "ROUTE_ACTIVE",
+      "ROUTE_MODE",
+      "ROTATION_MODE"
+    ],
     "projectType": "native",
     "resources": {
       "media": [
@@ -51,7 +51,7 @@
       "watchface": false
     }
   },
-  "version": "1.0.4",
+  "version": "1.0.5",
   "scripts": {
     "tsc": "tsc",
     "build": "tsc; pebble build",
