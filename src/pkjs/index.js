@@ -38,6 +38,9 @@ var mapHandler;
             if (payload.ROUTE_MODE !== undefined) {
                 mapHandler.setMode(payload.ROUTE_MODE);
             }
+            if (payload.ROTATION_MODE !== undefined) {
+                mapHandler.setRotationMode(payload.ROTATION_MODE !== 0);
+            }
             if (payload.STOP_ROUTING !== undefined) {
                 mapHandler.resetRoute();
             }

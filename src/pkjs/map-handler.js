@@ -41,6 +41,7 @@ var MapHandler = /** @class */ (function () {
         this.rendering = false;
         this.lastRecalc = 0;
         this.isFlint = false;
+        this.rotationMode = false;
         this.mapState = new rxjs_1.BehaviorSubject({});
         var info = Pebble.getActiveWatchInfo();
         var w = 144;
@@ -82,7 +83,7 @@ var MapHandler = /** @class */ (function () {
         }))
             .subscribe();
         // Set initial Data
-        this.mapState.next(__assign(__assign({}, this.mapState.value), { zoom: DEFAULT_ZOOM, mode: DEFAULT_MODE, width: w, height: h }));
+        this.mapState.next(__assign(__assign({}, this.mapState.value), { zoom: DEFAULT_ZOOM, mode: DEFAULT_MODE, width: w, height: h, rotationMode: false }));
     }
     MapHandler.prototype.updatePosition = function (pos) {
         var _a;
@@ -112,6 +113,11 @@ var MapHandler = /** @class */ (function () {
             this.existingRoute = undefined;
             this.mapState.next(__assign(__assign({}, this.mapState.value), { mode: name }));
         }
+    };
+    MapHandler.prototype.setRotationMode = function (enabled) {
+        console.log('setRotationMode', enabled);
+        this.rotationMode = enabled;
+        this.mapState.next(__assign(__assign({}, this.mapState.value), { rotationMode: enabled }));
     };
     MapHandler.prototype.zoom = function (zoom) {
         if (ENABLE_LOGS)

@@ -42,6 +42,7 @@ export class MapHandler {
   private rendering = false;
   private lastRecalc = 0;
   private isFlint = false;
+  private rotationMode = false;
   private readonly mapState = new BehaviorSubject<PartialMapState>({});
 
   constructor(destroyApp: Observable<void>) {
@@ -113,6 +114,7 @@ export class MapHandler {
       mode: DEFAULT_MODE,
       width: w,
       height: h,
+      rotationMode: false,
     });
   }
 
@@ -164,6 +166,15 @@ export class MapHandler {
         mode: name,
       });
     }
+  }
+
+  public setRotationMode(enabled: boolean): void {
+    console.log('setRotationMode', enabled);
+    this.rotationMode = enabled;
+    this.mapState.next({
+      ...this.mapState.value,
+      rotationMode: enabled,
+    });
   }
 
   public zoom(zoom: number): void {

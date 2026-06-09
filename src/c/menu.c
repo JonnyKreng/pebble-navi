@@ -13,6 +13,8 @@ static bool s_backlight_on;
 static char s_backlight_label[20];
 static RouteMode s_route_mode;
 static char s_route_label[20];
+static bool s_rotation_mode;
+static char s_rotation_label[20];
 
 static int s_selected_index;
 
@@ -37,6 +39,12 @@ static void update_route_label(void)
     };
     snprintf(s_route_label, sizeof(s_route_label),
              "Mode: %s", names[s_route_mode]);
+}
+
+static void update_rotation_label(void)
+{
+    snprintf(s_rotation_label, sizeof(s_rotation_label),
+             "Rotate Map: %s", s_rotation_mode ? "On" : "Off");
 }
 
 static void draw_about(GContext* ctx, GRect bounds)
@@ -84,7 +92,7 @@ static void menu_layer_update_proc(Layer* layer, GContext* ctx)
 
     if (s_mode == MODE_MAIN_MENU)
     {
-        int num_visible = s_has_route ? 6 : 5;
+        int num_visible = s_has_route ? 7 : 6;
         int item_h = ITEM_HEIGHT;
         if (num_visible * item_h > bounds.size.h)
         {
@@ -94,7 +102,7 @@ static void menu_layer_update_proc(Layer* layer, GContext* ctx)
         int start_y = (bounds.size.h - total_h) / 2;
 
         int drawn = 0;
-        for (int slot = 0; slot < 6; slot++)
+        for (int slot = 0; slot < 7; slot++)
         {
             if (slot == 1 && !s_has_route) continue;
 
@@ -106,6 +114,7 @@ static void menu_layer_update_proc(Layer* layer, GContext* ctx)
                 case 2: text = "Save Location";      break;
                 case 3: text = s_route_label;        break;
                 case 4: text = s_backlight_label;    break;
+                case 5: text = s_rotation_label;     break;
                 default: text = "About";             break;
             }
 
@@ -175,6 +184,8 @@ void menu_init(Layer* parent_layer, MenuSendCallback send_cb)
     update_backlight_label();
     s_route_mode = ROUTE_MODE_WALKING;
     update_route_label();
+    s_rotation_mode = false;
+    update_rotation_label();
     s_collecting_dests = false;
     s_dest_names_total = 0;
     s_dest_names_received = 0;
@@ -258,7 +269,7 @@ bool menu_handle_down(void)
     int max_index;
     if (s_mode == MODE_MAIN_MENU)
     {
-        max_index = s_has_route ? 5 : 4;
+        max_index = s_has_route ? 6 : 5;
     }
     else
     {
@@ -282,44 +293,50 @@ bool menu_handle_select(void)
         static const int slot_noroute[5] = {0, 2, 3, 4, 5};
         int slot = s_has_route ? s_selected_index : slot_noroute[s_selected_index];
 
-        switch (slot)
-        {
-            case 0:
-                if (s_send_cb) s_send_cb(MESSAGE_KEY_REQUEST_DESTINATIONS, 1);
-                reset_dest_collection();
-                break;
-            case 1:
-                if (s_send_cb) s_send_cb(MESSAGE_KEY_STOP_ROUTING, 1);
-                s_has_route = false;
-                menu_hide();
-                break;
-            case 2:
-                if (s_send_cb) s_send_cb(MESSAGE_KEY_SAVE_CURRENT_LOCATION, 1);
-                menu_hide();
-                break;
-            case 3:
-                s_route_mode = (s_route_mode + 1) % 3;
-                update_route_label();
-                if (s_send_cb) s_send_cb(MESSAGE_KEY_ROUTE_MODE, s_route_mode);
-                layer_mark_dirty(s_menu_layer);
-                break;
-            case 4:
-                s_backlight_on = !s_backlight_on;
-                light_enable(s_backlight_on);
-                update_backlight_label();
-                layer_mark_dirty(s_menu_layer);
-                break;
-            default:
-                s_mode = MODE_ABOUT;
-                s_selected_index = 0;
-                layer_mark_dirty(s_menu_layer);
-                break;
-        }
+            switch (slot)
+            {
+                case 0:
+                    if (s_send_cb) s_send_cb(MESSAGE_KEY_REQUEST_DESTINATIONS, 1);
+                    reset_dest_collection();
+                    break;
+                case 1:
+                    if (s_send_cb) s_send_cb(MESSAGE_KEY_STOP_ROUTING, 1);
+                    s_has_route = false;
+                    menu_hide();
+                    break;
+                case 2:
+                    if (s_send_cb) s_send_cb(MESSAGE_KEY_SAVE_CURRENT_LOCATION, 1);
+                    menu_hide();
+                    break;
+                case 3:
+                    s_route_mode = (s_route_mode + 1) % 3;
+                    update_route_label();
+                    if (s_send_cb) s_send_cb(MESSAGE_KEY_ROUTE_MODE, s_route_mode);
+                    layer_mark_dirty(s_menu_layer);
+                    break;
+                case 4:
+                    s_backlight_on = !s_backlight_on;
+                    light_enable(s_backlight_on);
+                    update_backlight_label();
+                    layer_mark_dirty(s_menu_layer);
+                    break;
+                case 5:
+                    s_rotation_mode = !s_rotation_mode;
+                    update_rotation_label();
+                    if (s_send_cb) s_send_cb(MESSAGE_KEY_ROTATION_MODE, s_rotation_mode ? 1 : 0);
+                    layer_mark_dirty(s_menu_layer);
+                    break;
+                default:
+                    s_mode = MODE_ABOUT;
+                    s_selected_index = 0;
+                    layer_mark_dirty(s_menu_layer);
+                    break;
+            }
     }
     else if (s_mode == MODE_ABOUT)
     {
         s_mode = MODE_MAIN_MENU;
-        s_selected_index = s_has_route ? 5 : 4;
+        s_selected_index = s_has_route ? 6 : 5;
         layer_mark_dirty(s_menu_layer);
     }
     else if (s_mode == MODE_DEST_LIST)
