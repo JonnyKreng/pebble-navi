@@ -38,13 +38,7 @@ function loadDestinations() {
         }
     }
     catch (e) { }
-    return [
-        {
-            name: 'test',
-            lat: 7,
-            lng: 52,
-        },
-    ];
+    return [];
 }
 function saveDestinations(destinations) {
     try {
