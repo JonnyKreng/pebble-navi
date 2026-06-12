@@ -20,7 +20,7 @@ var helper_1 = require("./helper");
 var message_queue_1 = require("./message-queue");
 var ENABLE_LOGS = true;
 var DEFAULT_ZOOM = 16;
-var DEFAULT_CHUNK = 2048;
+var DEFAULT_CHUNK = 1024;
 exports.RouteMode = {
     WALKING: 0,
     CYCLING: 1,
@@ -41,6 +41,7 @@ var MapHandler = /** @class */ (function () {
         this.lastRecalc = 0;
         this.isBw = false;
         this.rotationMode = false;
+        this.isEmulator = false;
         this.mapState = new rxjs_1.BehaviorSubject({});
         this.userVerticalOffset = undefined;
         var info = Pebble.getActiveWatchInfo();
@@ -72,7 +73,8 @@ var MapHandler = /** @class */ (function () {
                 break;
         }
         if (ENABLE_LOGS)
-            console.log('Platform=' + info.platform + ' size=' + w + 'x' + h);
+            console.log('Platform=' + info.platform + ' model=' + info.model + ' size=' + w + 'x' + h);
+        this.isEmulator = (info.model && info.model.indexOf('qemu') !== -1) || false;
         this.mapState
             .pipe((0, rxjs_1.takeUntil)(destroyApp), (0, rxjs_1.filter)(function (state) {
             return state.zoom !== undefined &&
@@ -106,7 +108,9 @@ var MapHandler = /** @class */ (function () {
         this.mapState.next(__assign(__assign({}, this.mapState.value), { zoom: saved.zoom, mode: saved.mode, width: w, height: h, rotationMode: saved.rotationMode }));
     }
     MapHandler.prototype.setChunkSize = function (size) {
-        this.chunk_size = size + 512;
+        if (this.isEmulator)
+            return;
+        this.chunk_size = Math.max(DEFAULT_CHUNK, size - 128);
         if (ENABLE_LOGS)
             console.log('Chunk size set to', size);
     };

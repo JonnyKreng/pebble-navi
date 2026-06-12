@@ -20,7 +20,7 @@ type PartialMapState = Partial<MapState>;
 
 const ENABLE_LOGS = true;
 const DEFAULT_ZOOM = 16;
-const DEFAULT_CHUNK = 2048;
+const DEFAULT_CHUNK = 1024;
 
 export const RouteMode = {
   WALKING: 0,
@@ -42,6 +42,7 @@ export class MapHandler {
   private lastRecalc = 0;
   private isBw = false;
   private rotationMode = false;
+  private isEmulator = false;
   private readonly mapState = new BehaviorSubject<PartialMapState>({});
   private userVerticalOffset: number | undefined = undefined;
 
@@ -76,7 +77,9 @@ export class MapHandler {
         break;
     }
 
-    if (ENABLE_LOGS) console.log('Platform=' + info.platform + ' size=' + w + 'x' + h);
+    if (ENABLE_LOGS) console.log('Platform=' + info.platform + ' model=' + info.model + ' size=' + w + 'x' + h);
+
+    this.isEmulator = (info.model && info.model.indexOf('qemu') !== -1) || false;
 
     this.mapState
       .pipe(
@@ -142,7 +145,8 @@ export class MapHandler {
   }
 
   public setChunkSize(size: number): void {
-    this.chunk_size = size + 512;
+    if (this.isEmulator) return;
+    this.chunk_size = Math.max(DEFAULT_CHUNK, size - 128);
     if (ENABLE_LOGS) console.log('Chunk size set to', size);
   }
 
