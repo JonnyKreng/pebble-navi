@@ -11,6 +11,7 @@ import {
   tap,
 } from 'rxjs';
 import { MapState, renderForState, RenderOutput } from './server/stateRenderer';
+import { worldPixel } from './server/osm';
 import { Destination } from './index';
 import { distanceToRoute, RouteResult } from './server/routing';
 import { asciiNormalize, loadSettings, loadUnits, rleEncode, saveSettings } from './helper';
@@ -43,6 +44,13 @@ export class MapHandler {
   private lastRecalc = 0;
   private isFlint = false;
   private rotationMode = false;
+  private mapTopLeftX = 0;
+  private mapTopLeftY = 0;
+  private expandedW = 0;
+  private expandedH = 0;
+  private lastPosTimestamp = 0;
+  private lastUserBufX = 0;
+  private lastUserBufY = 0;
   private readonly mapState = new BehaviorSubject<PartialMapState>({});
 
   constructor(destroyApp: Observable<void>) {
@@ -134,11 +142,18 @@ export class MapHandler {
   public updatePosition(pos: GeolocationPosition): void {
     if (ENABLE_LOGS) console.info('updatePosition', JSON.stringify(pos));
 
-    this.mapState.next({
-      ...this.mapState.value,
-      currentPos: { lat: pos.coords.latitude, lng: pos.coords.longitude },
-      bearing: pos.coords.heading ?? undefined,
-    });
+    const newPos = { lat: pos.coords.latitude, lng: pos.coords.longitude };
+    const bearing = pos.coords.heading ?? undefined;
+
+    if (this.isWithinExpandedMap(newPos)) {
+      this.sendPositionUpdate(newPos, bearing);
+    } else {
+      this.mapState.next({
+        ...this.mapState.value,
+        currentPos: newPos,
+        bearing,
+      });
+    }
   }
 
   public selectRoute(destination: Destination): void {
@@ -192,6 +207,11 @@ export class MapHandler {
     });
     const s = this.mapState.value;
     saveSettings({ zoom: s.zoom!, mode: s.mode!, rotationMode: enabled });
+    messageQueue.enqueue(
+      { ROTATION_MODE: enabled ? 1 : 0 },
+      () => {},
+      (err) => console.error('Rotation mode ack send failed: ' + err.error),
+    );
   }
 
   public zoom(zoom: number): void {
@@ -216,9 +236,97 @@ export class MapHandler {
     return true;
   }
 
+  private isWithinExpandedMap(pos: { lat: number; lng: number }): boolean {
+    if (this.expandedW === 0 || this.expandedH === 0) return false;
+
+    const zoom = this.mapState.value.zoom;
+    if (zoom === undefined) return false;
+
+    const px = worldPixel(pos.lat, pos.lng, zoom);
+    const bufX = px.wx - this.mapTopLeftX;
+    const bufY = px.wy - this.mapTopLeftY;
+
+    // Inner 60% safe zone (20% margin from each edge)
+    const marginX = this.expandedW * 0.2;
+    const marginY = this.expandedH * 0.2;
+
+    return (
+      bufX >= marginX &&
+      bufX < this.expandedW - marginX &&
+      bufY >= marginY &&
+      bufY < this.expandedH - marginY
+    );
+  }
+
+  private sendPositionUpdate(pos: { lat: number; lng: number }, bearing?: number): void {
+    const zoom = this.mapState.value.zoom;
+    if (zoom === undefined) return;
+    if (this.expandedW === 0 || this.expandedH === 0) return;
+
+    const px = worldPixel(pos.lat, pos.lng, zoom);
+    const userBufX = Math.round(px.wx - this.mapTopLeftX);
+    const userBufY = Math.round(px.wy - this.mapTopLeftY);
+
+    // Compute velocity (fixed-point 8.7: value / 128 = pixels/sec)
+    const now = Date.now();
+    const dt = (now - this.lastPosTimestamp) / 1000;
+    let vx = 0;
+    let vy = 0;
+    if (dt > 0.1 && dt <= 10) {
+      vx = Math.round(((userBufX - this.lastUserBufX) / dt) * 128);
+      vy = Math.round(((userBufY - this.lastUserBufY) / dt) * 128);
+    }
+
+    this.lastPosTimestamp = now;
+    this.lastUserBufX = userBufX;
+    this.lastUserBufY = userBufY;
+
+    messageQueue.enqueue({
+      USER_POS_X: userBufX,
+      USER_POS_Y: userBufY,
+      USER_BEARING: bearing !== undefined ? Math.round(bearing * 1000) : undefined,
+      USER_VX: vx,
+      USER_VY: vy,
+    });
+  }
+
   private onMapRendered(renderOutput: RenderOutput): void {
     this.existingRoute = renderOutput.route;
+    this.mapTopLeftX = renderOutput.mapTopLeftX;
+    this.mapTopLeftY = renderOutput.mapTopLeftY;
+    this.expandedW = renderOutput.mapWidth;
+    this.expandedH = renderOutput.mapHeight;
 
+    // Compute initial user position in expanded map coords
+    const pos = this.mapState.value.currentPos;
+    const bearing = this.mapState.value.bearing;
+    let initialUserX = 0;
+    let initialUserY = 0;
+    if (pos) {
+      const zoom = this.mapState.value.zoom;
+      if (zoom !== undefined) {
+        const px = worldPixel(pos.lat, pos.lng, zoom);
+        initialUserX = Math.round(px.wx - this.mapTopLeftX);
+        initialUserY = Math.round(px.wy - this.mapTopLeftY);
+      }
+    }
+
+    // Reset velocity tracking for the new map
+    const now = Date.now();
+    this.lastPosTimestamp = now;
+    this.lastUserBufX = initialUserX;
+    this.lastUserBufY = initialUserY;
+
+    // Send map dimensions BEFORE bitmap chunks so watch can resize its buffer
+    messageQueue.enqueue({
+      USER_POS_X: initialUserX,
+      USER_POS_Y: initialUserY,
+      MAP_BUFFER_WIDTH: this.expandedW,
+      MAP_BUFFER_HEIGHT: this.expandedH,
+      USER_BEARING: bearing !== undefined ? Math.round(bearing * 1000) : undefined,
+      USER_VX: 0,
+      USER_VY: 0,
+    });
     this.sendRouteToWatch(renderOutput);
     this.sendBitmapToWatch(renderOutput.pixels);
   }

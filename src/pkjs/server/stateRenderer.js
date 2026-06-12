@@ -36,16 +36,16 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
     }
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.USER_Y_OFFSET = void 0;
+exports.EXPAND_FACTOR = void 0;
 exports.renderForState = renderForState;
 var osm_js_1 = require("./osm.js");
 var routing_js_1 = require("./routing.js");
 var renderer_js_1 = require("./renderer.js");
 var pebble_palette_js_1 = require("./pebble-palette.js");
-exports.USER_Y_OFFSET = 0.85;
+exports.EXPAND_FACTOR = 1.3;
 function renderForState(s, existingRoute, isFlint) {
     return __awaiter(this, void 0, void 0, function () {
-        var center, route, _a, _b, nextStep, ns, mapRotation, outUserOffsetY, renderW, renderH, cosA, sinA, maxDY, centerPx, vl, vt, tx0, ty0, tx1, ty1, tilePromises, _loop_1, tx, tileResults, tiles, rgba, pixels;
+        var center, route, _a, _b, nextStep, ns, renderW, renderH, centerPx, vl, vt, tx0, ty0, tx1, ty1, tilePromises, _loop_1, tx, tileResults, tiles, rgba, pixels;
         var _c;
         return __generator(this, function (_d) {
             switch (_d.label) {
@@ -73,23 +73,8 @@ function renderForState(s, existingRoute, isFlint) {
                         if (ns)
                             nextStep = ns;
                     }
-                    if (s.rotationMode) {
-                        if (nextStep && s.currentPos) {
-                            mapRotation = -(0, routing_js_1.bearingTo)(s.currentPos, nextStep.step.location);
-                        }
-                        else if (s.bearing != null) {
-                            mapRotation = -s.bearing;
-                        }
-                    }
-                    outUserOffsetY = mapRotation != null ? s.width * exports.USER_Y_OFFSET : undefined;
-                    renderW = s.width, renderH = s.height;
-                    if (mapRotation != null) {
-                        cosA = Math.abs(Math.cos((mapRotation * Math.PI) / 180));
-                        sinA = Math.abs(Math.sin((mapRotation * Math.PI) / 180));
-                        maxDY = outUserOffsetY != null ? Math.max(outUserOffsetY, s.height - outUserOffsetY) : s.height / 2;
-                        renderW = Math.ceil(s.width * cosA + 2 * maxDY * sinA) + 1;
-                        renderH = Math.ceil(s.width * sinA + 2 * maxDY * cosA) + 1;
-                    }
+                    renderW = Math.ceil(s.width * exports.EXPAND_FACTOR);
+                    renderH = Math.ceil(s.height * exports.EXPAND_FACTOR);
                     centerPx = (0, osm_js_1.worldPixel)(center.lat, center.lng, s.zoom);
                     vl = centerPx.wx - renderW / 2;
                     vt = centerPx.wy - renderH / 2;
@@ -116,27 +101,25 @@ function renderForState(s, existingRoute, isFlint) {
                     rgba = (0, renderer_js_1.renderMap)({
                         width: renderW,
                         height: renderH,
-                        outputWidth: mapRotation != null ? s.width : undefined,
-                        outputHeight: mapRotation != null ? s.height : undefined,
-                        outputUserOffsetY: outUserOffsetY,
                         zoom: s.zoom,
                         center: center,
                         start: s.origin,
                         dest: s.dest,
-                        currentPos: s.currentPos,
-                        bearing: s.bearing,
                         route: route,
                         tiles: tiles,
                         userOffsetY: renderH / 2,
-                        rotation: mapRotation,
                     });
                     pixels = isFlint
-                        ? (0, pebble_palette_js_1.quantizeToPebble2Bit)(rgba, s.width, s.height).pixels
-                        : (0, pebble_palette_js_1.quantizeToPebble)(rgba, s.width, s.height).pixels;
+                        ? (0, pebble_palette_js_1.quantizeToPebble2Bit)(rgba, renderW, renderH).pixels
+                        : (0, pebble_palette_js_1.quantizeToPebble)(rgba, renderW, renderH).pixels;
                     return [2 /*return*/, {
                             pixels: pixels,
                             route: route,
                             nextStep: nextStep,
+                            mapTopLeftX: vl,
+                            mapTopLeftY: vt,
+                            mapWidth: renderW,
+                            mapHeight: renderH,
                         }];
             }
         });

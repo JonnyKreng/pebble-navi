@@ -9,15 +9,9 @@ export interface RenderInput {
   center: { lat: number; lng: number };
   start?: { lat: number; lng: number };
   dest?: { lat: number; lng: number };
-  currentPos?: { lat: number; lng: number };
-  bearing?: number;
   route?: RouteResult;
   tiles: Array<{ buffer: Uint8Array; tx: number; ty: number }>;
   userOffsetY?: number;
-  rotation?: number;
-  outputWidth?: number;
-  outputHeight?: number;
-  outputUserOffsetY?: number;
 }
 
 function fillRect(
@@ -230,72 +224,6 @@ function drawDiamondOutline(
   }
 }
 
-function drawArrow(
-  buf: Uint8Array,
-  w: number,
-  h: number,
-  cx: number,
-  cy: number,
-  angle: number,
-  cr: number,
-  cg: number,
-  cb: number,
-) {
-  const cosA = Math.cos(angle);
-  const sinA = Math.sin(angle);
-  const tip = 15;
-  const back = 9;
-  const wing = 9;
-  const pts: [number, number][] = [
-    [0, -tip],
-    [-wing, back],
-    [0, 5],
-    [wing, back],
-  ];
-  const rotated = pts.map(
-    ([px, py]) =>
-      [Math.round(cx + px * cosA - py * sinA), Math.round(cy + px * sinA + py * cosA)] as [
-        number,
-        number,
-      ],
-  );
-
-  const minY = Math.min(...rotated.map((p) => p[1]));
-  const maxY = Math.max(...rotated.map((p) => p[1]));
-  const minX = Math.min(...rotated.map((p) => p[0]));
-  const maxX = Math.max(...rotated.map((p) => p[0]));
-
-  for (let y = minY; y <= maxY; y++) {
-    for (let x = minX; x <= maxX; x++) {
-      if (
-        pointInTriangle(x, y, rotated[0], rotated[1], rotated[2]) ||
-        pointInTriangle(x, y, rotated[0], rotated[2], rotated[3])
-      ) {
-        setPixel(buf, w, h, x, y, cr, cg, cb);
-      }
-    }
-  }
-}
-
-function pointInTriangle(
-  px: number,
-  py: number,
-  a: [number, number],
-  b: [number, number],
-  c: [number, number],
-): boolean {
-  const d1 = sign(px, py, a, b);
-  const d2 = sign(px, py, b, c);
-  const d3 = sign(px, py, c, a);
-  const hasNeg = d1 < 0 || d2 < 0 || d3 < 0;
-  const hasPos = d1 > 0 || d2 > 0 || d3 > 0;
-  return !(hasNeg && hasPos);
-}
-
-function sign(px: number, py: number, a: [number, number], b: [number, number]): number {
-  return (px - b[0]) * (a[1] - b[1]) - (a[0] - b[0]) * (py - b[1]);
-}
-
 function markerPixel(lat: number, lng: number, zoom: number, vl: number, vt: number) {
   const p = worldPixel(lat, lng, zoom);
   return { x: p.wx - vl, y: p.wy - vt };
@@ -363,96 +291,9 @@ function renderMapNormal(input: RenderInput): Uint8Array {
     drawDiamondOutline(buf, width, height, d.x, d.y, 7, 255, 255, 255);
   }
 
-  if (input.currentPos) {
-    const p = markerPixel(input.currentPos.lat, input.currentPos.lng, input.zoom, vl, vt);
-    if (input.bearing != null) {
-      drawArrow(buf, width, height, p.x, p.y, (input.bearing * Math.PI) / 180, 0x00, 0xcc, 0xff);
-      const halfArrow = 9;
-      for (let dy = -halfArrow; dy <= halfArrow; dy++) {
-        for (let dx = -halfArrow; dx <= halfArrow; dx++) {
-          if (
-            Math.abs(dx) <= halfArrow - Math.abs(dy) &&
-            (Math.abs(dx) <= 1 || Math.abs(dy) <= 1)
-          ) {
-            const nx = Math.round(p.x + dx);
-            const ny = Math.round(p.y + dy);
-            if (nx >= 0 && nx < width && ny >= 0 && ny < height) {
-              const idx = (ny * width + nx) * 4;
-              if (buf[idx] === 0xf8 && buf[idx + 1] === 0xf8 && buf[idx + 2] === 0xf8) {
-                setPixel(buf, width, height, nx, ny, 0xff, 0xcc, 0x00);
-              }
-            }
-          }
-        }
-      }
-    } else {
-      drawFilledCircle(buf, width, height, p.x, p.y, 5, 0, 0xcc, 0xff);
-      drawCircleOutline(buf, width, height, p.x, p.y, 5, 0, 0, 0);
-    }
-  }
-
-  return buf;
-}
-
-function renderMapRotated(input: RenderInput): Uint8Array {
-  const outW = input.outputWidth ?? input.width;
-  const outH = input.outputHeight ?? input.height;
-  const rotRad = (input.rotation! * Math.PI) / 180;
-
-  const cosA = Math.abs(Math.cos(rotRad));
-  const sinA = Math.abs(Math.sin(rotRad));
-  const outCY = input.outputUserOffsetY ?? outH / 2;
-  const maxDY = input.outputUserOffsetY != null
-    ? Math.max(input.outputUserOffsetY, outH - input.outputUserOffsetY)
-    : outH / 2;
-  const expW = Math.ceil(outW * cosA + 2 * maxDY * sinA) + 1;
-  const expH = Math.ceil(outW * sinA + 2 * maxDY * cosA) + 1;
-
-  const unrotated = renderMapNormal({
-    ...input,
-    width: expW,
-    height: expH,
-    userOffsetY: expH / 2,
-    rotation: undefined,
-  });
-
-  const cosR = Math.cos(rotRad);
-  const sinR = Math.sin(rotRad);
-  const expCX = expW / 2;
-  const expCY = expH / 2;
-  const outCX = outW / 2;
-  const buf = new Uint8Array(outW * outH * 4);
-  const bgR = 0xf8, bgG = 0xf8, bgB = 0xf8;
-
-  for (let y = 0; y < outH; y++) {
-    for (let x = 0; x < outW; x++) {
-      const dx = x - outCX;
-      const dy = y - outCY;
-      const sx = Math.round(expCX + dx * cosR + dy * sinR);
-      const sy = Math.round(expCY - dx * sinR + dy * cosR);
-
-      const dstIdx = (y * outW + x) * 4;
-      if (sx >= 0 && sx < expW && sy >= 0 && sy < expH) {
-        const srcIdx = (sy * expW + sx) * 4;
-        buf[dstIdx] = unrotated[srcIdx];
-        buf[dstIdx + 1] = unrotated[srcIdx + 1];
-        buf[dstIdx + 2] = unrotated[srcIdx + 2];
-        buf[dstIdx + 3] = 255;
-      } else {
-        buf[dstIdx] = bgR;
-        buf[dstIdx + 1] = bgG;
-        buf[dstIdx + 2] = bgB;
-        buf[dstIdx + 3] = 255;
-      }
-    }
-  }
-
   return buf;
 }
 
 export function renderMap(input: RenderInput): Uint8Array {
-  if (input.rotation != null && input.rotation !== 0) {
-    return renderMapRotated(input);
-  }
   return renderMapNormal(input);
 }

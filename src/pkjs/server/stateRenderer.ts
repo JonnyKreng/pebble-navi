@@ -1,15 +1,9 @@
 import { TILE_SIZE, getTile, worldPixel } from './osm.js';
-import {
-  fetchRoute,
-  findNextStep,
-  bearingTo,
-  type RouteResult,
-  type RouteStep,
-} from './routing.js';
+import { fetchRoute, findNextStep, type RouteResult, type RouteStep } from './routing.js';
 import { renderMap } from './renderer.js';
 import { quantizeToPebble, quantizeToPebble2Bit } from './pebble-palette.js';
 
-export const USER_Y_OFFSET = 0.85;
+export const EXPAND_FACTOR = 1.3;
 
 export interface MapState {
   currentPos: { lat: number; lng: number };
@@ -30,6 +24,10 @@ export interface RenderOutput {
     step: RouteStep;
     remainingDist: number;
   };
+  mapTopLeftX: number;
+  mapTopLeftY: number;
+  mapWidth: number;
+  mapHeight: number;
 }
 
 export async function renderForState(
@@ -49,27 +47,8 @@ export async function renderForState(
     if (ns) nextStep = ns;
   }
 
-  let mapRotation: number | undefined;
-  if (s.rotationMode) {
-    if (nextStep && s.currentPos) {
-      mapRotation = -bearingTo(s.currentPos, nextStep.step.location);
-    } else if (s.bearing != null) {
-      mapRotation = -s.bearing;
-    }
-  }
-
-  const outUserOffsetY = mapRotation != null ? s.width * USER_Y_OFFSET : undefined;
-
-  let renderW = s.width,
-    renderH = s.height;
-  if (mapRotation != null) {
-    const cosA = Math.abs(Math.cos((mapRotation * Math.PI) / 180));
-    const sinA = Math.abs(Math.sin((mapRotation * Math.PI) / 180));
-    const maxDY =
-      outUserOffsetY != null ? Math.max(outUserOffsetY, s.height - outUserOffsetY) : s.height / 2;
-    renderW = Math.ceil(s.width * cosA + 2 * maxDY * sinA) + 1;
-    renderH = Math.ceil(s.width * sinA + 2 * maxDY * cosA) + 1;
-  }
+  const renderW = Math.ceil(s.width * EXPAND_FACTOR);
+  const renderH = Math.ceil(s.height * EXPAND_FACTOR);
 
   const centerPx = worldPixel(center.lat, center.lng, s.zoom);
   const vl = centerPx.wx - renderW / 2;
@@ -96,28 +75,26 @@ export async function renderForState(
   const rgba = renderMap({
     width: renderW,
     height: renderH,
-    outputWidth: mapRotation != null ? s.width : undefined,
-    outputHeight: mapRotation != null ? s.height : undefined,
-    outputUserOffsetY: outUserOffsetY,
     zoom: s.zoom,
     center,
     start: s.origin,
     dest: s.dest,
-    currentPos: s.currentPos,
-    bearing: s.bearing,
     route,
     tiles,
     userOffsetY: renderH / 2,
-    rotation: mapRotation,
   });
 
   const pixels = isFlint
-    ? quantizeToPebble2Bit(rgba, s.width, s.height).pixels
-    : quantizeToPebble(rgba, s.width, s.height).pixels;
+    ? quantizeToPebble2Bit(rgba, renderW, renderH).pixels
+    : quantizeToPebble(rgba, renderW, renderH).pixels;
 
   return {
     pixels,
     route,
     nextStep,
+    mapTopLeftX: vl,
+    mapTopLeftY: vt,
+    mapWidth: renderW,
+    mapHeight: renderH,
   };
 }

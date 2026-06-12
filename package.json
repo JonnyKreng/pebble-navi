@@ -27,7 +27,14 @@
       "NAV_INFO_LINE2",
       "ROUTE_ACTIVE",
       "ROUTE_MODE",
-      "ROTATION_MODE"
+      "ROTATION_MODE",
+      "USER_POS_X",
+      "USER_POS_Y",
+      "MAP_BUFFER_WIDTH",
+      "MAP_BUFFER_HEIGHT",
+      "USER_BEARING",
+      "USER_VX",
+      "USER_VY"
     ],
     "projectType": "native",
     "resources": {

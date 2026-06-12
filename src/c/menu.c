@@ -1,6 +1,8 @@
 #include <pebble.h>
 #include "menu.h"
 
+#include "navigation.h"
+
 #define MAX_DEST_NAMES 30
 #define MAX_NAME_LEN 32
 #define ITEM_HEIGHT 36
@@ -342,6 +344,7 @@ bool menu_handle_select(void)
                     break;
                 case 5:
                     s_rotation_mode = !s_rotation_mode;
+                    navigation_set_rotation_mode(s_rotation_mode);
                     update_rotation_label();
                     if (s_send_cb) s_send_cb(MESSAGE_KEY_ROTATION_MODE, s_rotation_mode ? 1 : 0);
                     layer_mark_dirty(s_menu_layer);

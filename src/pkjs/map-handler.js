@@ -15,6 +15,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.MapHandler = exports.RouteMode = void 0;
 var rxjs_1 = require("rxjs");
 var stateRenderer_1 = require("./server/stateRenderer");
+var osm_1 = require("./server/osm");
 var routing_1 = require("./server/routing");
 var helper_1 = require("./helper");
 var message_queue_1 = require("./message-queue");
@@ -42,6 +43,13 @@ var MapHandler = /** @class */ (function () {
         this.lastRecalc = 0;
         this.isFlint = false;
         this.rotationMode = false;
+        this.mapTopLeftX = 0;
+        this.mapTopLeftY = 0;
+        this.expandedW = 0;
+        this.expandedH = 0;
+        this.lastPosTimestamp = 0;
+        this.lastUserBufX = 0;
+        this.lastUserBufY = 0;
         this.mapState = new rxjs_1.BehaviorSubject({});
         var info = Pebble.getActiveWatchInfo();
         var w = 144;
@@ -102,7 +110,14 @@ var MapHandler = /** @class */ (function () {
         var _a;
         if (ENABLE_LOGS)
             console.info('updatePosition', JSON.stringify(pos));
-        this.mapState.next(__assign(__assign({}, this.mapState.value), { currentPos: { lat: pos.coords.latitude, lng: pos.coords.longitude }, bearing: (_a = pos.coords.heading) !== null && _a !== void 0 ? _a : undefined }));
+        var newPos = { lat: pos.coords.latitude, lng: pos.coords.longitude };
+        var bearing = (_a = pos.coords.heading) !== null && _a !== void 0 ? _a : undefined;
+        if (this.isWithinExpandedMap(newPos)) {
+            this.sendPositionUpdate(newPos, bearing);
+        }
+        else {
+            this.mapState.next(__assign(__assign({}, this.mapState.value), { currentPos: newPos, bearing: bearing }));
+        }
     };
     MapHandler.prototype.selectRoute = function (destination) {
         if (ENABLE_LOGS)
@@ -135,6 +150,7 @@ var MapHandler = /** @class */ (function () {
         this.mapState.next(__assign(__assign({}, this.mapState.value), { rotationMode: enabled }));
         var s = this.mapState.value;
         (0, helper_1.saveSettings)({ zoom: s.zoom, mode: s.mode, rotationMode: enabled });
+        message_queue_1.messageQueue.enqueue({ ROTATION_MODE: enabled ? 1 : 0 }, function () { }, function (err) { return console.error('Rotation mode ack send failed: ' + err.error); });
     };
     MapHandler.prototype.zoom = function (zoom) {
         if (ENABLE_LOGS)
@@ -152,8 +168,86 @@ var MapHandler = /** @class */ (function () {
         this.lastRecalc = now;
         return true;
     };
+    MapHandler.prototype.isWithinExpandedMap = function (pos) {
+        if (this.expandedW === 0 || this.expandedH === 0)
+            return false;
+        var zoom = this.mapState.value.zoom;
+        if (zoom === undefined)
+            return false;
+        var px = (0, osm_1.worldPixel)(pos.lat, pos.lng, zoom);
+        var bufX = px.wx - this.mapTopLeftX;
+        var bufY = px.wy - this.mapTopLeftY;
+        // Inner 60% safe zone (20% margin from each edge)
+        var marginX = this.expandedW * 0.2;
+        var marginY = this.expandedH * 0.2;
+        return (bufX >= marginX &&
+            bufX < this.expandedW - marginX &&
+            bufY >= marginY &&
+            bufY < this.expandedH - marginY);
+    };
+    MapHandler.prototype.sendPositionUpdate = function (pos, bearing) {
+        var zoom = this.mapState.value.zoom;
+        if (zoom === undefined)
+            return;
+        if (this.expandedW === 0 || this.expandedH === 0)
+            return;
+        var px = (0, osm_1.worldPixel)(pos.lat, pos.lng, zoom);
+        var userBufX = Math.round(px.wx - this.mapTopLeftX);
+        var userBufY = Math.round(px.wy - this.mapTopLeftY);
+        // Compute velocity (fixed-point 8.7: value / 128 = pixels/sec)
+        var now = Date.now();
+        var dt = (now - this.lastPosTimestamp) / 1000;
+        var vx = 0;
+        var vy = 0;
+        if (dt > 0.1 && dt <= 10) {
+            vx = Math.round(((userBufX - this.lastUserBufX) / dt) * 128);
+            vy = Math.round(((userBufY - this.lastUserBufY) / dt) * 128);
+        }
+        this.lastPosTimestamp = now;
+        this.lastUserBufX = userBufX;
+        this.lastUserBufY = userBufY;
+        message_queue_1.messageQueue.enqueue({
+            USER_POS_X: userBufX,
+            USER_POS_Y: userBufY,
+            USER_BEARING: bearing !== undefined ? Math.round(bearing * 1000) : undefined,
+            USER_VX: vx,
+            USER_VY: vy,
+        });
+    };
     MapHandler.prototype.onMapRendered = function (renderOutput) {
         this.existingRoute = renderOutput.route;
+        this.mapTopLeftX = renderOutput.mapTopLeftX;
+        this.mapTopLeftY = renderOutput.mapTopLeftY;
+        this.expandedW = renderOutput.mapWidth;
+        this.expandedH = renderOutput.mapHeight;
+        // Compute initial user position in expanded map coords
+        var pos = this.mapState.value.currentPos;
+        var bearing = this.mapState.value.bearing;
+        var initialUserX = 0;
+        var initialUserY = 0;
+        if (pos) {
+            var zoom = this.mapState.value.zoom;
+            if (zoom !== undefined) {
+                var px = (0, osm_1.worldPixel)(pos.lat, pos.lng, zoom);
+                initialUserX = Math.round(px.wx - this.mapTopLeftX);
+                initialUserY = Math.round(px.wy - this.mapTopLeftY);
+            }
+        }
+        // Reset velocity tracking for the new map
+        var now = Date.now();
+        this.lastPosTimestamp = now;
+        this.lastUserBufX = initialUserX;
+        this.lastUserBufY = initialUserY;
+        // Send map dimensions BEFORE bitmap chunks so watch can resize its buffer
+        message_queue_1.messageQueue.enqueue({
+            USER_POS_X: initialUserX,
+            USER_POS_Y: initialUserY,
+            MAP_BUFFER_WIDTH: this.expandedW,
+            MAP_BUFFER_HEIGHT: this.expandedH,
+            USER_BEARING: bearing !== undefined ? Math.round(bearing * 1000) : undefined,
+            USER_VX: 0,
+            USER_VY: 0,
+        });
         this.sendRouteToWatch(renderOutput);
         this.sendBitmapToWatch(renderOutput.pixels);
     };
