@@ -85,7 +85,7 @@ var MapHandler = /** @class */ (function () {
                 state.currentPos !== undefined &&
                 state.dest !== undefined) {
                 var d = (0, routing_1.distanceToRoute)(state.currentPos.lat, state.currentPos.lng, _this.existingRoute.coordinates);
-                if (d > 100 && _this.canRecalc()) {
+                if (d > _this.getRecalculationDistance() && _this.canRecalc()) {
                     console.log('Off route by ' + Math.round(d) + 'm, recalculating');
                     _this.existingRoute = undefined;
                     state.origin = state.currentPos;
@@ -268,6 +268,16 @@ var MapHandler = /** @class */ (function () {
             }
         }
         message_queue_1.messageQueue.enqueue(dict, function () { }, function (err) { return console.error('Route info send failed: ' + err.error); });
+    };
+    MapHandler.prototype.getRecalculationDistance = function () {
+        switch (this.mapState.value.mode) {
+            case 'walking':
+                return 15;
+            case 'cycling':
+                return 45;
+            default:
+                return 100;
+        }
     };
     return MapHandler;
 }());

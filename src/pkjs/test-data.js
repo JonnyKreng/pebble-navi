@@ -2,7 +2,7 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.TEST_DESTINATIONS = void 0;
 exports.test_override = test_override;
-var DO_TESTING = false;
+var DO_TESTING = true;
 exports.TEST_DESTINATIONS = DO_TESTING
     ? [
         {

@@ -109,12 +109,11 @@ var mapHandler;
             ROTATION_MODE: mapHandler.getRotationMode() ? 1 : 0,
         }, function () { }, function (err) { return console.error('Initial state send failed: ' + err.error); });
         location.pipe((0, rxjs_1.takeUntil)(destroyApp)).subscribe(function (pos) {
-            pos = (0, test_data_1.test_override)(pos);
             if (ENABLE_LOGS)
                 console.log('geolocation event', JSON.stringify(pos));
             mapHandler === null || mapHandler === void 0 ? void 0 : mapHandler.updatePosition(pos);
         });
-        navigationWatcher = navigator.geolocation.watchPosition(function (pos) { return location.next(pos); }, console.error, {
+        navigationWatcher = navigator.geolocation.watchPosition(function (pos) { return location.next((0, test_data_1.test_override)(pos)); }, console.error, {
             enableHighAccuracy: true,
             maximumAge: 5000,
         });
@@ -123,4 +122,12 @@ var mapHandler;
     catch (e) {
         console.error(e);
     }
+});
+(0, rxjs_1.interval)(1000).subscribe(function (nbr) {
+    location.next({
+        coords: {
+            latitude: 52.520976307736106 + 0.00001 * nbr,
+            longitude: 13.414912636513549,
+        },
+    });
 });
