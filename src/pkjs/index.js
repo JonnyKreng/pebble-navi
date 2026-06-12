@@ -113,7 +113,7 @@ var mapHandler;
                 console.log('geolocation event', JSON.stringify(pos));
             mapHandler === null || mapHandler === void 0 ? void 0 : mapHandler.updatePosition(pos);
         });
-        navigationWatcher = navigator.geolocation.watchPosition(function (pos) { return location.next((0, test_data_1.test_override)(pos)); }, console.error, {
+        navigationWatcher = navigator.geolocation.watchPosition(function (pos) { return location.next((0, test_data_1.testOverride)(pos)); }, console.error, {
             enableHighAccuracy: true,
             maximumAge: 5000,
         });
@@ -123,11 +123,4 @@ var mapHandler;
         console.error(e);
     }
 });
-(0, rxjs_1.interval)(1000).subscribe(function (nbr) {
-    location.next({
-        coords: {
-            latitude: 52.520976307736106 + 0.00001 * nbr,
-            longitude: 13.414912636513549,
-        },
-    });
-});
+(0, test_data_1.testAutoMove)(location);
