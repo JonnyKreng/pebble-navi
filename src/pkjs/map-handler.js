@@ -18,7 +18,7 @@ var stateRenderer_1 = require("./server/stateRenderer");
 var routing_1 = require("./server/routing");
 var helper_1 = require("./helper");
 var message_queue_1 = require("./message-queue");
-var ENABLE_LOGS = false;
+var ENABLE_LOGS = true;
 var DEFAULT_ZOOM = 16;
 var DEFAULT_CHUNK = 2048;
 exports.RouteMode = {
@@ -105,6 +105,11 @@ var MapHandler = /** @class */ (function () {
         this.rotationMode = saved.rotationMode;
         this.mapState.next(__assign(__assign({}, this.mapState.value), { zoom: saved.zoom, mode: saved.mode, width: w, height: h, rotationMode: saved.rotationMode }));
     }
+    MapHandler.prototype.setChunkSize = function (size) {
+        this.chunk_size = size + 512;
+        if (ENABLE_LOGS)
+            console.log('Chunk size set to', size);
+    };
     MapHandler.prototype.getRouteMode = function () {
         var mode = this.mapState.value.mode;
         if (mode === 'walking')
@@ -183,7 +188,7 @@ var MapHandler = /** @class */ (function () {
         }
         this.sending = true;
         var chunkSize = this.chunk_size;
-        var compressed = (0, helper_1.rleEncode)(pixels);
+        var compressed = (0, helper_1.encodeAdaptive)(pixels);
         var totalChunks = Math.ceil(compressed.length / chunkSize);
         if (ENABLE_LOGS)
             console.log('sendBitmapToWatch: pixels=' +

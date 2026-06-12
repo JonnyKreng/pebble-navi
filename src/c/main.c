@@ -9,6 +9,7 @@ static TextLayer* s_next_step_layer;
 static TextLayer* s_waiting_layer;
 static char* s_route_summary_text;
 static char* s_next_step_text;
+static uint32_t max_message_size = 2028;
 
 static bool s_js_ready = false;
 static bool s_pending = false;
@@ -110,6 +111,14 @@ static void send_zoom_dir(int dir)
     enqueue_send(MESSAGE_KEY_ZOOM_DIR, dir);
 }
 
+static void send_max_message_size_handler(void* data)
+{
+//#ifdef LOGGING_ENABLED
+    APP_LOG(APP_LOG_LEVEL_INFO, "Send appmessage size to phone %d", max_message_size);
+//#endif
+    enqueue_send(MESSAGE_KEY_MAX_MESSAGE_SIZE, max_message_size);
+}
+
 static void menu_send_callback(uint32_t key, uint32_t value)
 {
     enqueue_send(key, value);
@@ -183,6 +192,8 @@ static void main_window_load(Window* window)
 
     menu_init(window_layer, menu_send_callback);
 
+    app_timer_register(5000, send_max_message_size_handler, NULL);
+
     s_waiting_layer = text_layer_create(GRect(0, 0, bounds.size.w, bounds.size.h));
     text_layer_set_background_color(s_waiting_layer, GColorBulgarianRose);
     text_layer_set_text_color(s_waiting_layer, GColorWhite);
@@ -226,7 +237,9 @@ static void init()
     app_message_register_outbox_failed(outbox_failed);
     app_message_register_outbox_sent(outbox_sent);
 
-    app_message_open(4096, 1024);
+    max_message_size = app_message_inbox_size_maximum();
+
+    app_message_open(max_message_size, 1024);
 
     window_stack_push(s_main_window, true);
 }

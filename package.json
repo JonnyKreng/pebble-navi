@@ -27,7 +27,8 @@
       "NAV_INFO_LINE2",
       "ROUTE_ACTIVE",
       "ROUTE_MODE",
-      "ROTATION_MODE"
+      "ROTATION_MODE",
+      "MAX_MESSAGE_SIZE"
     ],
     "projectType": "native",
     "resources": {
@@ -68,6 +69,7 @@
     "screenshot": "pebble screenshot screenshot.png",
     "push": "npx tsc; pebble build; pebble install --phone",
     "wipe": "pebble wipe",
+    "benchmark": "bash benchmark/run.sh",
     "format": "prettier --write \"src/**/*.ts\""
   },
   "dependencies": {

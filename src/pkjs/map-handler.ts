@@ -13,12 +13,12 @@ import {
 import { MapState, renderForState, RenderOutput } from './server/stateRenderer';
 import { Destination } from './index';
 import { distanceToRoute, RouteResult } from './server/routing';
-import { asciiNormalize, loadSettings, loadUnits, rleEncode, saveSettings } from './helper';
+import { asciiNormalize, encodeAdaptive, loadSettings, loadUnits, saveSettings } from './helper';
 import { messageQueue } from './message-queue';
 
 type PartialMapState = Partial<MapState>;
 
-const ENABLE_LOGS = false;
+const ENABLE_LOGS = true;
 const DEFAULT_ZOOM = 16;
 const DEFAULT_CHUNK = 2048;
 
@@ -141,6 +141,11 @@ export class MapHandler {
     });
   }
 
+  public setChunkSize(size: number): void {
+    this.chunk_size = size + 512;
+    if (ENABLE_LOGS) console.log('Chunk size set to', size);
+  }
+
   public getRouteMode(): number {
     const mode = this.mapState.value.mode;
     if (mode === 'walking') return 0;
@@ -252,7 +257,7 @@ export class MapHandler {
     this.sending = true;
 
     const chunkSize = this.chunk_size;
-    const compressed = rleEncode(pixels);
+    const compressed = encodeAdaptive(pixels);
     const totalChunks = Math.ceil(compressed.length / chunkSize);
     if (ENABLE_LOGS)
       console.log(

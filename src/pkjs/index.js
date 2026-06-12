@@ -43,6 +43,9 @@ var mapHandler;
             if (payload.ROTATION_MODE !== undefined) {
                 mapHandler.setRotationMode(payload.ROTATION_MODE !== 0);
             }
+            if (payload.MAX_MESSAGE_SIZE !== undefined) {
+                mapHandler.setChunkSize(payload.MAX_MESSAGE_SIZE);
+            }
             if (payload.STOP_ROUTING !== undefined) {
                 mapHandler.resetRoute();
             }

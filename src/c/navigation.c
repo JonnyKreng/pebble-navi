@@ -16,17 +16,23 @@
 
 #define MAX_BITMAP_DATA_SIZE  SCREEN_W * SCREEN_H
 
-static unsigned int s_chunk_size;
-
 static Layer* s_map_layer;
 static GBitmap* s_bitmap;
 static uint8_t* s_bitmap_data;
 static char s_time_text[6];
 static int s_chunks_received = 0;
 static int s_decompressed_offset = 0;
-static int s_rle_state = 0;
-static int s_rle_run_count = 0;
-static uint8_t s_rle_run_val = 0;
+static int s_hxl_state = 0;
+static int s_hxl_run_count = 0;
+static uint8_t s_hxl_run_val = 0;
+static int s_hxl_xl_len_lo = 0;
+
+static int s_lzss_state = 0;
+static int s_lzss_flags = 0;
+static int s_lzss_bit = 0;
+static int s_lzss_off = 0;
+static int s_lzss_len = 0;
+static int s_algo = 0;
 
 static int s_bitmap_width = SCREEN_W;
 static int s_bitmap_height = SCREEN_H;
@@ -190,70 +196,160 @@ static void init_default_palette(void)
     }
 }
 
-static int rle_decode_chunk(const uint8_t* in, int in_len, uint8_t* out, int out_max)
+static int hxl_decode_chunk(const uint8_t* in, int in_len, uint8_t* out, int out_max)
 {
     int ip = 0, op = 0;
 
-    while (s_rle_run_count > 0 && op < out_max)
+    while (s_hxl_run_count > 0 && op < out_max)
     {
-        out[op++] = s_rle_run_val;
-        s_rle_run_count--;
+        out[op++] = s_hxl_run_val;
+        s_hxl_run_count--;
     }
+    if (s_hxl_run_count > 0) return op;
 
-    if (s_rle_state == 1 && ip < in_len)
+    if (s_hxl_state == 1 && ip < in_len)
     {
-        s_rle_run_count = in[ip++] + 1;
-        s_rle_state = 2;
+        s_hxl_xl_len_lo = in[ip++];
+        s_hxl_state = 2;
     }
-    if (s_rle_state == 2 && ip < in_len)
+    if (s_hxl_state == 2 && ip < in_len)
     {
-        s_rle_run_val = in[ip++];
-        int n = s_rle_run_count;
+        int hi = in[ip++];
+        s_hxl_run_count = s_hxl_xl_len_lo | (hi << 8);
+        s_hxl_state = 3;
+    }
+    if (s_hxl_state == 3 && ip < in_len)
+    {
+        s_hxl_run_val = in[ip++];
+        int n = s_hxl_run_count;
         if (op + n > out_max) n = out_max - op;
-        memset(out + op, s_rle_run_val, n);
+        memset(out + op, s_hxl_run_val, n);
         op += n;
-        s_rle_run_count -= n;
-        if (s_rle_run_count > 0) return op;
-        s_rle_state = 0;
+        s_hxl_run_count -= n;
+        if (s_hxl_run_count > 0) return op;
+        s_hxl_state = 0;
     }
 
     while (ip < in_len && op < out_max)
     {
         uint8_t b = in[ip++];
-        if (b < 64)
+        if (b < 0x80)
         {
             out[op++] = b;
         }
-        else if (b == 64)
+        else if (b == 0xFF)
         {
-            if (ip >= in_len) { s_rle_state = 1; break; }
-            int count = in[ip++] + 1;
-            if (ip >= in_len) { s_rle_run_count = count; s_rle_state = 2; break; }
-            s_rle_run_val = in[ip++];
+            if (ip >= in_len) { s_hxl_state = 1; break; }
+            int lo = in[ip++];
+            if (ip >= in_len) { s_hxl_xl_len_lo = lo; s_hxl_state = 2; break; }
+            int hi = in[ip++];
+            int count = lo | (hi << 8);
+            if (ip >= in_len) { s_hxl_run_count = count; s_hxl_state = 3; break; }
+            s_hxl_run_val = in[ip++];
             int n = count;
             if (op + n > out_max) n = out_max - op;
-            memset(out + op, s_rle_run_val, n);
+            memset(out + op, s_hxl_run_val, n);
             op += n;
-            s_rle_run_count = count - n;
-            if (s_rle_run_count > 0) break;
+            s_hxl_run_count = count - n;
+            if (s_hxl_run_count > 0) break;
+        }
+        else
+        {
+            int count = (b & 0x7F) + 1;
+            if (ip >= in_len) { s_hxl_run_count = count; s_hxl_state = 3; break; }
+            s_hxl_run_val = in[ip++];
+            int n = count;
+            if (op + n > out_max) n = out_max - op;
+            memset(out + op, s_hxl_run_val, n);
+            op += n;
+            s_hxl_run_count = count - n;
+            if (s_hxl_run_count > 0) break;
         }
     }
+    return op;
+}
+
+static int lzss_decode_chunk(const uint8_t* in, int in_len, uint8_t* out, int out_max)
+{
+    int ip = 0, op = 0;
+    uint8_t* base = s_bitmap_data;
+
+    if (s_lzss_state == 4) {
+        int n = s_lzss_len;
+        if (op + n > out_max) n = out_max - op;
+        int abs_pos = (int)(out - base) + op;
+        int src_abs = abs_pos - s_lzss_off;
+        for (int k = 0; k < n; k++) {
+            out[op++] = base[src_abs + k];
+        }
+        s_lzss_len -= n;
+        if (s_lzss_len > 0) return op;
+        s_lzss_bit++;
+        if (s_lzss_bit >= 8) { s_lzss_state = 0; }
+        else { s_lzss_state = 1; }
+    }
+
+    while (ip < in_len && op < out_max) {
+        if (s_lzss_state == 0) {
+            s_lzss_flags = in[ip++];
+            s_lzss_bit = 0;
+            s_lzss_state = 1;
+        }
+
+        if (s_lzss_state == 1) {
+            if (s_lzss_flags & (1 << (7 - s_lzss_bit))) {
+                s_lzss_state = 2;
+            } else {
+                s_lzss_state = 5;
+            }
+        }
+
+        if (s_lzss_state == 5) {
+            if (ip >= in_len) break;
+            out[op++] = in[ip++];
+            s_lzss_bit++;
+            if (s_lzss_bit >= 8) { s_lzss_state = 0; }
+            else { s_lzss_state = 1; }
+            continue;
+        }
+
+        if (s_lzss_state == 2) {
+            if (ip >= in_len) break;
+            s_lzss_off = in[ip++];
+            s_lzss_state = 3;
+        }
+
+        if (s_lzss_state == 3) {
+            if (ip >= in_len) break;
+            s_lzss_len = in[ip++];
+            s_lzss_state = 4;
+        }
+
+        if (s_lzss_state == 4) {
+            int n = s_lzss_len;
+            if (op + n > out_max) n = out_max - op;
+            int abs_pos = (int)(out - base) + op;
+            int src_abs = abs_pos - s_lzss_off;
+            for (int k = 0; k < n; k++) {
+                out[op++] = base[src_abs + k];
+            }
+            s_lzss_len -= n;
+            if (s_lzss_len > 0) break;
+            s_lzss_bit++;
+            if (s_lzss_bit >= 8) { s_lzss_state = 0; }
+            else { s_lzss_state = 1; }
+        }
+    }
+
     return op;
 }
 
 void navigation_init(void)
 {
     init_default_palette();
-    s_chunk_size = 2048;
     time_t now = time(NULL);
     time_tick_handler(localtime(&now), MINUTE_UNIT);
     tick_timer_service_subscribe(MINUTE_UNIT, time_tick_handler);
-    APP_LOG(APP_LOG_LEVEL_INFO, "Chunk size set to %d", s_chunk_size);
-}
-
-int navigation_get_chunk_size(void)
-{
-    return s_chunk_size;
 }
 
 Layer* navigation_create_map_layer(GRect bounds)
@@ -313,8 +409,10 @@ bool navigation_handle_message(DictionaryIterator* iter)
         {
             s_chunks_received = 0;
             s_decompressed_offset = 0;
-            s_rle_state = 0;
-            s_rle_run_count = 0;
+            s_hxl_state = 0;
+            s_hxl_run_count = 0;
+            s_lzss_state = 0;
+            s_algo = (data->length > 0) ? data->value->data[0] : 0;
         }
 
         if (!s_bitmap_data)
@@ -327,9 +425,18 @@ bool navigation_handle_message(DictionaryIterator* iter)
         APP_LOG(APP_LOG_LEVEL_INFO, "Chunk %d/%lu (%d bytes)", chunk_index, total->value->uint32, data->length);
 #endif
 
-        int decoded = rle_decode_chunk(data->value->data, data->length,
+        const uint8_t* chunk_data = data->value->data + (idx->value->uint32 == 0 ? 1 : 0);
+        int chunk_len = data->length - (idx->value->uint32 == 0 ? 1 : 0);
+        int decoded;
+        if (s_algo == 0) {
+            decoded = hxl_decode_chunk(chunk_data, chunk_len,
                                         &s_bitmap_data[s_decompressed_offset],
                                         s_bitmap_data_size - s_decompressed_offset);
+        } else {
+            decoded = lzss_decode_chunk(chunk_data, chunk_len,
+                                        &s_bitmap_data[s_decompressed_offset],
+                                        s_bitmap_data_size - s_decompressed_offset);
+        }
         s_decompressed_offset += decoded;
         s_chunks_received++;
 

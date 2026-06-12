@@ -49,17 +49,67 @@ export function saveDestinations(destinations: Destination[]): void {
   } catch (e) {}
 }
 
-export function rleEncode(data: Uint8Array): Uint8Array {
+export function encodeLZSS(data: Uint8Array, window: number): Uint8Array {
+  const out: number[] = [];
+  const MAX_MATCH = 15;
+  const MIN_MATCH = 2;
+  let i = 0;
+  while (i < data.length) {
+    const flagPos = out.length;
+    out.push(0);
+    let flags = 0;
+    for (let bit = 0; bit < 8 && i < data.length; bit++) {
+      let bestLen = 0;
+      let bestOff = 0;
+      const windowStart = Math.max(0, i - window);
+      for (let j = windowStart; j < i; j++) {
+        let len = 0;
+        while (len < MAX_MATCH && i + len < data.length && data[j + len] === data[i + len]) {
+          len++;
+        }
+        if (len >= MIN_MATCH && len > bestLen) {
+          bestLen = len;
+          bestOff = i - j;
+        }
+      }
+      if (bestLen >= MIN_MATCH) {
+        flags |= (1 << (7 - bit));
+        out.push(bestOff & 0xFF, bestLen);
+        i += bestLen;
+      } else {
+        out.push(data[i]);
+        i++;
+      }
+    }
+    out[flagPos] = flags;
+  }
+  return new Uint8Array(out);
+}
+
+export function encodeAdaptive(pixels: Uint8Array): Uint8Array {
+  const xl = encodeHoffmannXL(pixels);
+  const lzss = encodeLZSS(pixels, 255);
+  const best = lzss.length < xl.length ? lzss : xl;
+  const out = new Uint8Array(1 + best.length);
+  out[0] = best === lzss ? 1 : 0;
+  out.set(best, 1);
+  return out;
+}
+
+export function encodeHoffmannXL(data: Uint8Array): Uint8Array {
   const out: number[] = [];
   let i = 0;
   while (i < data.length) {
     const val = data[i];
     let runLen = 1;
-    while (i + runLen < data.length && data[i + runLen] === val && runLen < 256) {
+    while (i + runLen < data.length && data[i + runLen] === val && runLen < 65536) {
       runLen++;
     }
-    if (runLen >= 2 || val >= 64) {
-      out.push(64, runLen - 1, val);
+    if (runLen >= 128) {
+      out.push(0xFF, runLen & 0xFF, (runLen >> 8) & 0xFF, val);
+      i += runLen;
+    } else if (runLen >= 2) {
+      out.push(0x80 | (runLen - 1), val);
       i += runLen;
     } else {
       out.push(val);

@@ -3,3 +3,10 @@ node_modules
 .lock-waf_darwin_build
 cmake-build-debug
 .idea
+
+# Benchmark generated files
+benchmark/data/
+benchmark/results/
+benchmark/encode.bundle.js
+benchmark/c/decode_bench
+benchmark/c/decode_bench.dSYM/
