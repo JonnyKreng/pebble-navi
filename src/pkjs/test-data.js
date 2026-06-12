@@ -4,7 +4,7 @@ exports.TEST_DESTINATIONS = void 0;
 exports.testOverride = testOverride;
 exports.testAutoMove = testAutoMove;
 var rxjs_1 = require("rxjs");
-var DO_TESTING = false;
+var DO_TESTING = true;
 exports.TEST_DESTINATIONS = DO_TESTING
     ? [
         {
