@@ -224,7 +224,12 @@ function renderMapNormal(input) {
         var coords = input.route.coordinates;
         if (coords.length > 0) {
             drawPolyline(buf, width, height, coords, input.zoom, vl, vt, 255, 255, 255, 6);
-            drawPolyline(buf, width, height, coords, input.zoom, vl, vt, 51, 102, 255, 4);
+            if (input.isBw) {
+                drawPolyline(buf, width, height, coords, input.zoom, vl, vt, 0, 0, 0, 4);
+            }
+            else {
+                drawPolyline(buf, width, height, coords, input.zoom, vl, vt, 51, 102, 255, 4);
+            }
         }
     }
     if (input.start) {

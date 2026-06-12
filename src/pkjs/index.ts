@@ -5,6 +5,7 @@ import { fromEvent, map, Subject, takeUntil, tap } from 'rxjs';
 import { sendDestinationsToWatch } from './destionations';
 import { MapHandler } from './map-handler';
 import { messageQueue } from './message-queue';
+import { test_override } from './test-data';
 
 const ENABLE_LOGS = false;
 
@@ -130,6 +131,8 @@ fromEvent(Pebble, 'ready')
       );
 
       location.pipe(takeUntil(destroyApp)).subscribe((pos: GeolocationPosition) => {
+        pos = test_override(pos);
+
         if (ENABLE_LOGS) console.log('geolocation event', JSON.stringify(pos));
         mapHandler?.updatePosition(pos);
       });

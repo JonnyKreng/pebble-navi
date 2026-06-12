@@ -64,6 +64,7 @@
     "debug-time-2": "pkill -x qemu-pebble; sleep 1; pebble wipe; pebble clean; npx tsc; pebble build; pebble install --emulator emery; pebble logs --emulator emery",
     "debug-round-2": "pkill -x qemu-pebble; sleep 1; pebble wipe; pebble clean; npx tsc; pebble build; pebble install --emulator gabbro; pebble logs --emulator gabbro",
     "debug-round": "pkill -x qemu-pebble; sleep 1; pebble wipe; pebble clean; npx tsc; pebble build; pebble install --emulator chalk; pebble logs --emulator chalk",
+    "debug-time": "pkill -x qemu-pebble; sleep 1; pebble wipe; pebble clean; npx tsc; pebble build; pebble install --emulator basalt; pebble logs --emulator basalt",
     "screenshot": "pebble screenshot screenshot.png",
     "push": "npx tsc; pebble build; pebble install --phone",
     "wipe": "pebble wipe",

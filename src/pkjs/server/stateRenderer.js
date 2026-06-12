@@ -43,10 +43,12 @@ var routing_js_1 = require("./routing.js");
 var renderer_js_1 = require("./renderer.js");
 var pebble_palette_js_1 = require("./pebble-palette.js");
 exports.USER_Y_OFFSET = 0.85;
-function renderForState(s, existingRoute, isFlint) {
-    return __awaiter(this, void 0, void 0, function () {
+function renderForState(s_1, existingRoute_1) {
+    return __awaiter(this, arguments, void 0, function (s, existingRoute, isBw, userVerticalOffset) {
         var center, route, _a, _b, nextStep, ns, mapRotation, outUserOffsetY, renderW, renderH, cosA, sinA, maxDY, centerPx, vl, vt, tx0, ty0, tx1, ty1, tilePromises, _loop_1, tx, tileResults, tiles, rgba, pixels;
         var _c;
+        if (isBw === void 0) { isBw = false; }
+        if (userVerticalOffset === void 0) { userVerticalOffset = exports.USER_Y_OFFSET; }
         return __generator(this, function (_d) {
             switch (_d.label) {
                 case 0:
@@ -81,7 +83,7 @@ function renderForState(s, existingRoute, isFlint) {
                             mapRotation = -s.bearing;
                         }
                     }
-                    outUserOffsetY = mapRotation != null ? s.width * exports.USER_Y_OFFSET : undefined;
+                    outUserOffsetY = mapRotation != null ? s.width * userVerticalOffset : undefined;
                     renderW = s.width, renderH = s.height;
                     if (mapRotation != null) {
                         cosA = Math.abs(Math.cos((mapRotation * Math.PI) / 180));
@@ -129,8 +131,9 @@ function renderForState(s, existingRoute, isFlint) {
                         tiles: tiles,
                         userOffsetY: renderH / 2,
                         rotation: mapRotation,
+                        isBw: isBw,
                     });
-                    pixels = isFlint
+                    pixels = isBw
                         ? (0, pebble_palette_js_1.quantizeToPebble2Bit)(rgba, s.width, s.height).pixels
                         : (0, pebble_palette_js_1.quantizeToPebble)(rgba, s.width, s.height).pixels;
                     return [2 /*return*/, {

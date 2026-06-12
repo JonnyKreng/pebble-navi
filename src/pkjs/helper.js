@@ -8,6 +8,7 @@ exports.loadDestinations = loadDestinations;
 exports.saveDestinations = saveDestinations;
 exports.rleEncode = rleEncode;
 exports.asciiNormalize = asciiNormalize;
+var test_data_1 = require("./test-data");
 var DESTINATIONS_KEY = 'destinations';
 var UNITS_KEY = 'units';
 var SETTINGS_KEY = 'nav_settings';
@@ -38,7 +39,7 @@ function loadDestinations() {
         }
     }
     catch (e) { }
-    return [];
+    return test_data_1.TEST_DESTINATIONS;
 }
 function saveDestinations(destinations) {
     try {

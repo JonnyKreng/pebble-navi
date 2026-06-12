@@ -18,6 +18,7 @@ export interface RenderInput {
   outputWidth?: number;
   outputHeight?: number;
   outputUserOffsetY?: number;
+  isBw: boolean;
 }
 
 function fillRect(
@@ -345,7 +346,11 @@ function renderMapNormal(input: RenderInput): Uint8Array {
     const coords = input.route.coordinates;
     if (coords.length > 0) {
       drawPolyline(buf, width, height, coords, input.zoom, vl, vt, 255, 255, 255, 6);
-      drawPolyline(buf, width, height, coords, input.zoom, vl, vt, 51, 102, 255, 4);
+      if (input.isBw) {
+        drawPolyline(buf, width, height, coords, input.zoom, vl, vt, 0, 0, 0, 4);
+      } else {
+        drawPolyline(buf, width, height, coords, input.zoom, vl, vt, 51, 102, 255, 4);
+      }
     }
   }
 
@@ -402,9 +407,10 @@ function renderMapRotated(input: RenderInput): Uint8Array {
   const cosA = Math.abs(Math.cos(rotRad));
   const sinA = Math.abs(Math.sin(rotRad));
   const outCY = input.outputUserOffsetY ?? outH / 2;
-  const maxDY = input.outputUserOffsetY != null
-    ? Math.max(input.outputUserOffsetY, outH - input.outputUserOffsetY)
-    : outH / 2;
+  const maxDY =
+    input.outputUserOffsetY != null
+      ? Math.max(input.outputUserOffsetY, outH - input.outputUserOffsetY)
+      : outH / 2;
   const expW = Math.ceil(outW * cosA + 2 * maxDY * sinA) + 1;
   const expH = Math.ceil(outW * sinA + 2 * maxDY * cosA) + 1;
 
@@ -422,7 +428,9 @@ function renderMapRotated(input: RenderInput): Uint8Array {
   const expCY = expH / 2;
   const outCX = outW / 2;
   const buf = new Uint8Array(outW * outH * 4);
-  const bgR = 0xf8, bgG = 0xf8, bgB = 0xf8;
+  const bgR = 0xf8,
+    bgG = 0xf8,
+    bgB = 0xf8;
 
   for (let y = 0; y < outH; y++) {
     for (let x = 0; x < outW; x++) {

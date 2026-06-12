@@ -1,4 +1,5 @@
 import { Destination } from './index';
+import { TEST_DESTINATIONS } from './test-data';
 
 const DESTINATIONS_KEY = 'destinations';
 const UNITS_KEY = 'units';
@@ -39,7 +40,7 @@ export function loadDestinations(): Destination[] {
       return JSON.parse(saved);
     }
   } catch (e) {}
-  return [];
+  return TEST_DESTINATIONS;
 }
 
 export function saveDestinations(destinations: Destination[]): void {

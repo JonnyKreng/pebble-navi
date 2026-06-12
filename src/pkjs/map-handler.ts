@@ -43,12 +43,12 @@ export class MapHandler {
   private isBw = false;
   private rotationMode = false;
   private readonly mapState = new BehaviorSubject<PartialMapState>({});
+  private userVerticalOffset: number | undefined = undefined;
 
   constructor(destroyApp: Observable<void>) {
     const info = Pebble.getActiveWatchInfo();
     let w = 144;
     let h = 168;
-    this.isBw = ['flint', 'aplite', 'diorite'].indexOf(info.platform) >= 0;
 
     switch (info.platform) {
       case 'emery':
@@ -58,10 +58,19 @@ export class MapHandler {
       case 'gabbro':
         w = 260;
         h = 260;
+        this.userVerticalOffset = 0.7;
         break;
       case 'chalk':
         w = 180;
         h = 180;
+        this.userVerticalOffset = 0.6;
+        break;
+      case 'flint':
+      case 'aplite':
+      case 'diorite':
+        w = 144;
+        h = 168;
+        this.isBw = true;
         break;
       default:
         break;
@@ -106,7 +115,9 @@ export class MapHandler {
             }
           }
         }),
-        switchMap((state) => from(renderForState(state, this.existingRoute, this.isBw))),
+        switchMap((state) =>
+          from(renderForState(state, this.existingRoute, this.isBw, this.userVerticalOffset)),
+        ),
         tap(() => (this.rendering = false)),
         tap((output) => this.onMapRendered(output)),
         catchError((err) => {

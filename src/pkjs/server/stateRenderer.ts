@@ -35,7 +35,8 @@ export interface RenderOutput {
 export async function renderForState(
   s: MapState,
   existingRoute?: RouteResult,
-  isFlint?: boolean,
+  isBw: boolean = false,
+  userVerticalOffset: number = USER_Y_OFFSET,
 ): Promise<RenderOutput> {
   let center = s.currentPos || s.origin;
 
@@ -58,7 +59,7 @@ export async function renderForState(
     }
   }
 
-  const outUserOffsetY = mapRotation != null ? s.width * USER_Y_OFFSET : undefined;
+  const outUserOffsetY = mapRotation != null ? s.width * userVerticalOffset : undefined;
 
   let renderW = s.width,
     renderH = s.height;
@@ -109,9 +110,10 @@ export async function renderForState(
     tiles,
     userOffsetY: renderH / 2,
     rotation: mapRotation,
+    isBw: isBw,
   });
 
-  const pixels = isFlint
+  const pixels = isBw
     ? quantizeToPebble2Bit(rgba, s.width, s.height).pixels
     : quantizeToPebble(rgba, s.width, s.height).pixels;
 

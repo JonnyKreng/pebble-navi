@@ -114,7 +114,7 @@ static void map_update_proc(Layer* layer, GContext* ctx)
     graphics_context_set_text_color(ctx, GColorWhite);
     graphics_draw_text(ctx, "-", fonts_get_system_font(FONT_KEY_GOTHIC_18_BOLD), GRect(minus_rect.origin.x, minus_rect.origin.y - 2, minus_rect.size.w, minus_rect.size.h), GTextOverflowModeTrailingEllipsis, GTextAlignmentCenter, NULL);
 
-    GPoint gear_center = GPoint(bounds.size.w - icon_size / 2 - MARGINE - 3, (bounds.size.h / 2) + 1);
+    GPoint gear_center = GPoint(bounds.size.w - icon_size / 2 - MARGINE + 3, (bounds.size.h / 2) + 1);
     GRect gear_rect = GRect(gear_center.x - icon_size / 2 - MARGINE, gear_center.y - icon_size / 2, icon_size, icon_size);
     graphics_context_set_fill_color(ctx, GColorBulgarianRose);
     graphics_fill_rect(ctx, gear_rect, icon_size / 2, GCornersAll);
