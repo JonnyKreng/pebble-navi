@@ -68,7 +68,7 @@ function buildSettings() {
     html +=
         '<input type="checkbox" id="telemetry"' +
             (telemetry ? ' checked' : '') +
-            '> Send anonymous usage data (logs, errors) to improve the app, no coordinates or destination names are send';
+            '> Send anonymous usage data (logs, errors) to improve the app, no coordinates, destination, names or unique identifier are send (needs restart)';
     html += '</label>';
     html += '<div class="section-title">Experimental</div>';
     html +=
