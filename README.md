@@ -2,20 +2,35 @@
 
 Turn-by-turn navigation for Pebble smartwatches.
 
-![emery](screenshots/emby1.png)
-![emery](screenshots/emby2.png)
-![emery](screenshots/emby3.png)
-![emery](screenshots/emby4.png)
+![emery](screenshots/emery1.png)
+![emery](screenshots/emery2.png)
+![emery](screenshots/emery3.png)
+![emery](screenshots/emery4.png)
+![emery](screenshots/emery5.png)
 
 ![gabbro](screenshots/gabbro1.png)
 ![gabbro](screenshots/gabbro2.png)
 ![gabbro](screenshots/gabbro3.png)
 ![gabbro](screenshots/gabbro4.png)
+![gabbro](screenshots/gabbro5.png)
 
-![flint](screenshots/flint1.png)
-![flint](screenshots/flint2.png)
-![flint](screenshots/flint3.png)
-![flint](screenshots/flint4.png)
+![chalk](screenshots/chalk1.png)
+![chalk](screenshots/chalk2.png)
+![chalk](screenshots/chalk3.png)
+![chalk](screenshots/chalk4.png)
+![chalk](screenshots/chalk5.png)
+
+![basalt](screenshots/basalt1.png)
+![basalt](screenshots/basalt2.png)
+![basalt](screenshots/basalt3.png)
+![basalt](screenshots/basalt4.png)
+![basalt](screenshots/basalt5.png)
+
+![aplite/diorite/flint](screenshots/aplite_diorite_flint1.png)
+![aplite/diorite/flint](screenshots/aplite_diorite_flint2.png)
+![aplite/diorite/flint](screenshots/aplite_diorite_flint3.png)
+![aplite/diorite/flint](screenshots/aplite_diorite_flint4.png)
+![aplite/diorite/flint](screenshots/aplite_diorite_flint5.png)
 
 ## Features
 
@@ -24,7 +39,7 @@ Turn-by-turn navigation for Pebble smartwatches.
 - Destination selection from saved locations
 - Save current location
 - Rotation mode — follow your heading
-- Supports Pebble Time 2 (emery), Pebble Time Round (gabbro), and Pebble 2 (flint)
+- Supports Pebble Time 2 (emery), Pebble Time Round (gabbro/chalk), Pebble Time/Time Steel (basalt), and Pebble 2/Classic (aplite/diorite/flint)
 
 ## Architecture
 
@@ -100,7 +115,7 @@ Settings are persisted in the phone's `localStorage`.
 
 -   `tsconfig.json` uses `ignoreDeprecations: "6.0"` (TS 6.x, ES5 target).
 -   Message keys are defined in `package.json` `pebble.messageKeys`. `CMakeLists.txt` generates `message_keys.auto.h` for CLion IDE support; the real build uses `waf`.
--   Targets: `emery`, `gabbro`, `flint`.
+-   Targets: `emery`, `gabbro`, `chalk`, `basalt`, `aplite`, `diorite`, `flint`.
 
 ## Data Attribution
 
