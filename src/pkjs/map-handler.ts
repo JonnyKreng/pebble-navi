@@ -77,7 +77,8 @@ export class MapHandler {
         break;
     }
 
-    if (ENABLE_LOGS) console.log('Platform=' + info.platform + ' model=' + info.model + ' size=' + w + 'x' + h);
+    if (ENABLE_LOGS)
+      console.log('Platform=' + info.platform + ' model=' + info.model + ' size=' + w + 'x' + h);
 
     this.isEmulator = (info.model && info.model.indexOf('qemu') !== -1) || false;
 

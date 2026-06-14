@@ -113,10 +113,20 @@ static void send_zoom_dir(int dir)
 
 static void send_max_message_size_handler(void* data)
 {
-//#ifdef LOGGING_ENABLED
-    APP_LOG(APP_LOG_LEVEL_INFO, "Send appmessage size to phone %d", max_message_size);
-//#endif
-    enqueue_send(MESSAGE_KEY_MAX_MESSAGE_SIZE, max_message_size);
+    if (s_js_ready)
+    {
+#ifdef LOGGING_ENABLED
+        APP_LOG(APP_LOG_LEVEL_INFO, "Send appmessage size to phone %d", max_message_size);
+#endif
+        enqueue_send(MESSAGE_KEY_MAX_MESSAGE_SIZE, max_message_size);
+    }
+    else
+    {
+#ifdef LOGGING_ENABLED
+        APP_LOG(APP_LOG_LEVEL_INFO, "Waiting to send Chunk Size");
+#endif
+        app_timer_register(500, send_max_message_size_handler, NULL);
+    }
 }
 
 static void menu_send_callback(uint32_t key, uint32_t value)
@@ -192,7 +202,7 @@ static void main_window_load(Window* window)
 
     menu_init(window_layer, menu_send_callback);
 
-    app_timer_register(5000, send_max_message_size_handler, NULL);
+    app_timer_register(500, send_max_message_size_handler, NULL);
 
     s_waiting_layer = text_layer_create(GRect(0, 0, bounds.size.w, bounds.size.h));
     text_layer_set_background_color(s_waiting_layer, GColorBulgarianRose);
