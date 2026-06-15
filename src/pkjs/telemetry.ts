@@ -131,11 +131,14 @@ export function initTelemetry(): void {
   ];
 
   const orig: Record<string, (...args: any[]) => void> = {};
-  for (const [method] of levels) {
+  const hookedMethods: [string, string][] = [];
+  for (const [method, severity] of levels) {
+    if (typeof (console as any)[method] !== 'function') continue;
     orig[method] = (console as any)[method].bind(console);
+    hookedMethods.push([method, severity]);
   }
 
-  for (const [method, severity] of levels) {
+  for (const [method, severity] of hookedMethods) {
     (console as any)[method] = function (...args: any[]) {
       orig[method].apply(console, args);
       if (isTelemetryEnabled()) {

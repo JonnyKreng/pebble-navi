@@ -4,7 +4,6 @@ import { loadDestinations, saveDestinations } from './helper';
 import { fromEvent, map, Subject, takeUntil, tap } from 'rxjs';
 import { sendDestinationsToWatch } from './destionations';
 import { MapHandler } from './map-handler';
-import { messageQueue } from './message-queue';
 import { ENABLE_LOGS, testAutoMove, testOverride } from './test-data';
 import { initTelemetry, flushTelemetry, setWatchInfo } from './telemetry';
 
@@ -127,7 +126,7 @@ fromEvent(Pebble, 'ready')
       mapHandler = new MapHandler(destroyApp);
 
       // Sync saved settings to watch on connect
-      messageQueue.enqueue(
+      Pebble.sendAppMessage(
         {
           ROUTE_MODE: mapHandler.getRouteMode(),
           ROTATION_MODE: mapHandler.getRotationMode() ? 1 : 0,

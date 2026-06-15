@@ -21,7 +21,6 @@ import {
   loadUnits,
   saveSettings,
 } from './helper';
-import { messageQueue } from './message-queue';
 import { ENABLE_LOGS } from './test-data';
 
 type PartialMapState = Partial<MapState>;
@@ -117,7 +116,7 @@ export class MapHandler {
               console.log('Off route by ' + Math.round(d) + 'm, recalculating');
               this.existingRoute = undefined;
               state.origin = state.currentPos;
-              messageQueue.enqueue(
+              Pebble.sendAppMessage(
                 { NAV_INFO_LINE1: 'Recalculating...', NAV_INFO_LINE2: '', ROUTE_ACTIVE: 0 },
                 () => {},
                 (err) => console.error('Recalculating send failed: ' + err.error),
@@ -318,7 +317,7 @@ export class MapHandler {
       if (ENABLE_LOGS)
         console.log('Sending chunk ' + index + '/' + totalChunks + ' (' + bytes.length + ' bytes)');
 
-      messageQueue.enqueue(
+      Pebble.sendAppMessage(
         {
           IMAGE_CHUNK_INDEX: index,
           IMAGE_CHUNKS_TOTAL: totalChunks,
@@ -385,7 +384,7 @@ export class MapHandler {
       }
     }
 
-    messageQueue.enqueue(
+    Pebble.sendAppMessage(
       dict,
       () => {},
       (err) => console.error('Route info send failed: ' + err.error),

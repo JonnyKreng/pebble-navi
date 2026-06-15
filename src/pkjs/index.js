@@ -6,7 +6,6 @@ var helper_1 = require("./helper");
 var rxjs_1 = require("rxjs");
 var destionations_1 = require("./destionations");
 var map_handler_1 = require("./map-handler");
-var message_queue_1 = require("./message-queue");
 var test_data_1 = require("./test-data");
 var telemetry_1 = require("./telemetry");
 (0, telemetry_1.initTelemetry)();
@@ -110,7 +109,7 @@ var mapHandler;
         (0, telemetry_1.setWatchInfo)(Pebble.getActiveWatchInfo());
         mapHandler = new map_handler_1.MapHandler(destroyApp);
         // Sync saved settings to watch on connect
-        message_queue_1.messageQueue.enqueue({
+        Pebble.sendAppMessage({
             ROUTE_MODE: mapHandler.getRouteMode(),
             ROTATION_MODE: mapHandler.getRotationMode() ? 1 : 0,
         }, function () { }, function (err) { return console.error('Initial state send failed: ' + err.error); });

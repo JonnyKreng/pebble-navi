@@ -124,9 +124,13 @@ function initTelemetry() {
         ['debug', 'DEBUG'],
     ];
     var orig = {};
+    var hookedMethods = [];
     for (var _i = 0, levels_1 = levels; _i < levels_1.length; _i++) {
-        var method = levels_1[_i][0];
+        var _a = levels_1[_i], method = _a[0], severity = _a[1];
+        if (typeof console[method] !== 'function')
+            continue;
         orig[method] = console[method].bind(console);
+        hookedMethods.push([method, severity]);
     }
     var _loop_1 = function (method, severity) {
         console[method] = function () {
@@ -150,8 +154,8 @@ function initTelemetry() {
             }
         };
     };
-    for (var _a = 0, levels_2 = levels; _a < levels_2.length; _a++) {
-        var _b = levels_2[_a], method = _b[0], severity = _b[1];
+    for (var _b = 0, hookedMethods_1 = hookedMethods; _b < hookedMethods_1.length; _b++) {
+        var _c = hookedMethods_1[_b], method = _c[0], severity = _c[1];
         _loop_1(method, severity);
     }
     scheduleFlush();

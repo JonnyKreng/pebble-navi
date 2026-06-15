@@ -1,5 +1,4 @@
 import { asciiNormalize, loadDestinations } from './helper';
-import { messageQueue } from './message-queue';
 
 export function sendDestinationsToWatch(): void {
   const names = loadDestinations().map(function (d) {
@@ -10,7 +9,7 @@ export function sendDestinationsToWatch(): void {
     if (i >= names.length) {
       return;
     }
-    messageQueue.enqueue(
+    Pebble.sendAppMessage(
       {
         SELECTED_DEST_INDEX: i,
         DEST_NAME: names[i],
@@ -20,7 +19,7 @@ export function sendDestinationsToWatch(): void {
     );
   }
 
-  messageQueue.enqueue(
+  Pebble.sendAppMessage(
     { DEST_NAMES_TOTAL: names.length },
     () => sendNext(0),
     (err) => console.error('DEST_NAMES_TOTAL send failed:', err.error),

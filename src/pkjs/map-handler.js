@@ -17,7 +17,6 @@ var rxjs_1 = require("rxjs");
 var stateRenderer_1 = require("./server/stateRenderer");
 var routing_1 = require("./server/routing");
 var helper_1 = require("./helper");
-var message_queue_1 = require("./message-queue");
 var test_data_1 = require("./test-data");
 var DEFAULT_ZOOM = 16;
 var DEFAULT_CHUNK = 2000;
@@ -91,7 +90,7 @@ var MapHandler = /** @class */ (function () {
                     console.log('Off route by ' + Math.round(d) + 'm, recalculating');
                     _this.existingRoute = undefined;
                     state.origin = state.currentPos;
-                    message_queue_1.messageQueue.enqueue({ NAV_INFO_LINE1: 'Recalculating...', NAV_INFO_LINE2: '', ROUTE_ACTIVE: 0 }, function () { }, function (err) { return console.error('Recalculating send failed: ' + err.error); });
+                    Pebble.sendAppMessage({ NAV_INFO_LINE1: 'Recalculating...', NAV_INFO_LINE2: '', ROUTE_ACTIVE: 0 }, function () { }, function (err) { return console.error('Recalculating send failed: ' + err.error); });
                 }
             }
         }), (0, rxjs_1.switchMap)(function (state) {
@@ -119,7 +118,7 @@ var MapHandler = /** @class */ (function () {
             return;
         if (!(0, helper_1.loadExperimentalEnabled)())
             return;
-        //this.chunk_size = Math.max(DEFAULT_CHUNK, size - 128);
+        this.chunk_size = Math.max(DEFAULT_CHUNK, size - 128);
         if (test_data_1.ENABLE_LOGS)
             console.log('Chunk size set to', size);
     };
@@ -236,7 +235,7 @@ var MapHandler = /** @class */ (function () {
             }
             if (test_data_1.ENABLE_LOGS)
                 console.log('Sending chunk ' + index + '/' + totalChunks + ' (' + bytes.length + ' bytes)');
-            message_queue_1.messageQueue.enqueue({
+            Pebble.sendAppMessage({
                 IMAGE_CHUNK_INDEX: index,
                 IMAGE_CHUNKS_TOTAL: totalChunks,
                 IMAGE_CHUNK_DATA: bytes,
@@ -264,7 +263,7 @@ var MapHandler = /** @class */ (function () {
         var dict = {};
         var units = (0, helper_1.loadUnits)();
         if (!output.route) {
-            dict.NAV_INFO_LINE1 = 'Select a Destination';
+            dict.NAV_INFO_LINE1 = 'Select Destination';
             dict.NAV_INFO_LINE2 = 'Add Destination in Pebble-App';
             dict.ROUTE_ACTIVE = 0;
         }
@@ -295,7 +294,7 @@ var MapHandler = /** @class */ (function () {
                 dict.NAV_INFO_LINE2 = '';
             }
         }
-        message_queue_1.messageQueue.enqueue(dict, function () { }, function (err) { return console.error('Route info send failed: ' + err.error); });
+        Pebble.sendAppMessage(dict, function () { }, function (err) { return console.error('Route info send failed: ' + err.error); });
     };
     MapHandler.prototype.getRecalculationDistance = function () {
         switch (this.mapState.value.mode) {
