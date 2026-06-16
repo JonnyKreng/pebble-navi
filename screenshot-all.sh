@@ -162,11 +162,11 @@ run_platform() {
 }
 
 # -------- Run each platform --------
+run_platform "flint"  "aplite_diorite_flint"
 run_platform "emery"  "emery"
 run_platform "gabbro" "gabbro"
 run_platform "chalk"  "chalk"
 run_platform "basalt" "basalt"
-run_platform "aplite" "aplite_diorite_flint"
 
 echo ""
 info "========================================"

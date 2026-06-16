@@ -26,6 +26,7 @@ static int s_hxl_state = 0;
 static int s_hxl_run_count = 0;
 static uint8_t s_hxl_run_val = 0;
 static int s_hxl_xl_len_lo = 0;
+static int s_hxl_pending_count = 0;
 
 static int s_lzss_state = 0;
 static int s_lzss_flags = 0;
@@ -215,19 +216,25 @@ static int hxl_decode_chunk(const uint8_t* in, int in_len, uint8_t* out, int out
     if (s_hxl_state == 2 && ip < in_len)
     {
         int hi = in[ip++];
-        s_hxl_run_count = s_hxl_xl_len_lo | (hi << 8);
+        s_hxl_pending_count = s_hxl_xl_len_lo | (hi << 8);
         s_hxl_state = 3;
     }
     if (s_hxl_state == 3 && ip < in_len)
     {
         s_hxl_run_val = in[ip++];
+        s_hxl_run_count = s_hxl_pending_count;
+        s_hxl_pending_count = 0;
+        s_hxl_state = 0;
+    }
+
+    if (s_hxl_run_count > 0)
+    {
         int n = s_hxl_run_count;
         if (op + n > out_max) n = out_max - op;
         memset(out + op, s_hxl_run_val, n);
         op += n;
         s_hxl_run_count -= n;
         if (s_hxl_run_count > 0) return op;
-        s_hxl_state = 0;
     }
 
     while (ip < in_len && op < out_max)
@@ -244,7 +251,7 @@ static int hxl_decode_chunk(const uint8_t* in, int in_len, uint8_t* out, int out
             if (ip >= in_len) { s_hxl_xl_len_lo = lo; s_hxl_state = 2; break; }
             int hi = in[ip++];
             int count = lo | (hi << 8);
-            if (ip >= in_len) { s_hxl_run_count = count; s_hxl_state = 3; break; }
+            if (ip >= in_len) { s_hxl_pending_count = count; s_hxl_state = 3; break; }
             s_hxl_run_val = in[ip++];
             int n = count;
             if (op + n > out_max) n = out_max - op;
@@ -256,7 +263,7 @@ static int hxl_decode_chunk(const uint8_t* in, int in_len, uint8_t* out, int out
         else
         {
             int count = (b & 0x7F) + 1;
-            if (ip >= in_len) { s_hxl_run_count = count; s_hxl_state = 3; break; }
+            if (ip >= in_len) { s_hxl_pending_count = count; s_hxl_state = 3; break; }
             s_hxl_run_val = in[ip++];
             int n = count;
             if (op + n > out_max) n = out_max - op;
@@ -411,6 +418,9 @@ bool navigation_handle_message(DictionaryIterator* iter)
             s_decompressed_offset = 0;
             s_hxl_state = 0;
             s_hxl_run_count = 0;
+            s_hxl_run_val = 0;
+            s_hxl_xl_len_lo = 0;
+            s_hxl_pending_count = 0;
             s_lzss_state = 0;
             s_algo = (data->length > 0) ? data->value->data[0] : 0;
         }
@@ -430,8 +440,8 @@ bool navigation_handle_message(DictionaryIterator* iter)
         int decoded;
         if (s_algo == 0) {
             decoded = hxl_decode_chunk(chunk_data, chunk_len,
-                                        &s_bitmap_data[s_decompressed_offset],
-                                        s_bitmap_data_size - s_decompressed_offset);
+                                       &s_bitmap_data[s_decompressed_offset],
+                                       s_bitmap_data_size - s_decompressed_offset);
         } else {
             decoded = lzss_decode_chunk(chunk_data, chunk_len,
                                         &s_bitmap_data[s_decompressed_offset],

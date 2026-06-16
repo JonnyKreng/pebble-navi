@@ -106,15 +106,17 @@ export function encodeLZSS(data: Uint8Array, window: number): Uint8Array {
 
 export function encodeAdaptive(pixels: Uint8Array): Uint8Array {
   if (ENABLE_LOGS) console.time('encodeHoffmannXL');
-  const xl = encodeHoffmannXL(pixels);
+  const hxl = encodeHoffmannXL(pixels);
   if (ENABLE_LOGS) console.timeEnd('encodeHoffmannXL');
   if (ENABLE_LOGS) console.time('encodeLZSS');
   const lzss = encodeLZSS(pixels, 255);
   if (ENABLE_LOGS) console.timeEnd('encodeLZSS');
-  const best = lzss.length < xl.length ? lzss : xl;
-  const out = new Uint8Array(1 + best.length);
-  out[0] = best === lzss ? 1 : 0;
-  out.set(best, 1);
+  const useHxl = hxl.length <= lzss.length;
+  const data = useHxl ? hxl : lzss;
+  const algo = useHxl ? 0 : 1;
+  const out = new Uint8Array(1 + data.length);
+  out[0] = algo;
+  out.set(data, 1);
   return out;
 }
 
@@ -124,7 +126,7 @@ export function encodeHoffmannXL(data: Uint8Array): Uint8Array {
   while (i < data.length) {
     const val = data[i];
     let runLen = 1;
-    while (i + runLen < data.length && data[i + runLen] === val && runLen < 65536) {
+    while (i + runLen < data.length && data[i + runLen] === val && runLen < 65535) {
       runLen++;
     }
     if (runLen >= 128) {
@@ -133,6 +135,9 @@ export function encodeHoffmannXL(data: Uint8Array): Uint8Array {
     } else if (runLen >= 2) {
       out.push(0x80 | (runLen - 1), val);
       i += runLen;
+    } else if (val >= 0x80) {
+      out.push(0x80, val);
+      i++;
     } else {
       out.push(val);
       i++;

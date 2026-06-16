@@ -224,6 +224,9 @@ function encodeHoffmannXL(data: Uint8Array): Uint8Array {
     } else if (runLen >= 2) {
       out.push(0x80 | (runLen - 1), val);
       i += runLen;
+    } else if (val >= 0x80) {
+      out.push(0x80, val);
+      i++;
     } else {
       out.push(val);
       i++;

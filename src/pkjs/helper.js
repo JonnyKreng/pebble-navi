@@ -107,7 +107,7 @@ function encodeLZSS(data, window) {
 function encodeAdaptive(pixels) {
     if (test_data_1.ENABLE_LOGS)
         console.time('encodeHoffmannXL');
-    var xl = encodeHoffmannXL(pixels);
+    var hxl = encodeHoffmannXL(pixels);
     if (test_data_1.ENABLE_LOGS)
         console.timeEnd('encodeHoffmannXL');
     if (test_data_1.ENABLE_LOGS)
@@ -115,10 +115,12 @@ function encodeAdaptive(pixels) {
     var lzss = encodeLZSS(pixels, 255);
     if (test_data_1.ENABLE_LOGS)
         console.timeEnd('encodeLZSS');
-    var best = lzss.length < xl.length ? lzss : xl;
-    var out = new Uint8Array(1 + best.length);
-    out[0] = best === lzss ? 1 : 0;
-    out.set(best, 1);
+    var useHxl = hxl.length <= lzss.length;
+    var data = useHxl ? hxl : lzss;
+    var algo = useHxl ? 0 : 1;
+    var out = new Uint8Array(1 + data.length);
+    out[0] = algo;
+    out.set(data, 1);
     return out;
 }
 function encodeHoffmannXL(data) {
@@ -127,7 +129,7 @@ function encodeHoffmannXL(data) {
     while (i < data.length) {
         var val = data[i];
         var runLen = 1;
-        while (i + runLen < data.length && data[i + runLen] === val && runLen < 65536) {
+        while (i + runLen < data.length && data[i + runLen] === val && runLen < 65535) {
             runLen++;
         }
         if (runLen >= 128) {
@@ -137,6 +139,10 @@ function encodeHoffmannXL(data) {
         else if (runLen >= 2) {
             out.push(0x80 | (runLen - 1), val);
             i += runLen;
+        }
+        else if (val >= 0x80) {
+            out.push(0x80, val);
+            i++;
         }
         else {
             out.push(val);
