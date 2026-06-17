@@ -9,6 +9,8 @@ import {
 import { renderMap } from './renderer.js';
 import { quantizeToPebble, quantizeToPebble2Bit } from './pebble-palette.js';
 
+let lastBearing: number | undefined;
+
 export const USER_Y_OFFSET = 0.85;
 
 export interface MapState {
@@ -50,12 +52,18 @@ export async function renderForState(
     if (ns) nextStep = ns;
   }
 
+  if (s.bearing != null) {
+    lastBearing = s.bearing;
+  }
+
   let mapRotation: number | undefined;
   if (s.rotationMode) {
     if (nextStep && s.currentPos) {
       mapRotation = -bearingTo(s.currentPos, nextStep.step.location);
     } else if (s.bearing != null) {
       mapRotation = -s.bearing;
+    } else if (lastBearing != null) {
+      mapRotation = -lastBearing;
     }
   }
 

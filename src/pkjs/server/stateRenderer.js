@@ -42,6 +42,7 @@ var osm_js_1 = require("./osm.js");
 var routing_js_1 = require("./routing.js");
 var renderer_js_1 = require("./renderer.js");
 var pebble_palette_js_1 = require("./pebble-palette.js");
+var lastBearing;
 exports.USER_Y_OFFSET = 0.85;
 function renderForState(s_1, existingRoute_1) {
     return __awaiter(this, arguments, void 0, function (s, existingRoute, isBw, userVerticalOffset) {
@@ -75,12 +76,18 @@ function renderForState(s_1, existingRoute_1) {
                         if (ns)
                             nextStep = ns;
                     }
+                    if (s.bearing != null) {
+                        lastBearing = s.bearing;
+                    }
                     if (s.rotationMode) {
                         if (nextStep && s.currentPos) {
                             mapRotation = -(0, routing_js_1.bearingTo)(s.currentPos, nextStep.step.location);
                         }
                         else if (s.bearing != null) {
                             mapRotation = -s.bearing;
+                        }
+                        else if (lastBearing != null) {
+                            mapRotation = -lastBearing;
                         }
                     }
                     outUserOffsetY = mapRotation != null ? s.width * userVerticalOffset : undefined;

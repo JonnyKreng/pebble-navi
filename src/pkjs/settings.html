@@ -1,0 +1,632 @@
+<!doctype html>
+<html>
+  <head>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <style>
+      body {
+        font-family: sans-serif;
+        padding: 16px;
+        background: #1a1a2e;
+        color: #eee;
+        max-width: 400px;
+        margin: 0 auto;
+      }
+
+      h1 {
+        color: #4fc3f7;
+        font-size: 20px;
+        margin: 0 0 16px;
+      }
+
+      .dest {
+        padding: 8px;
+        margin: 4px 0;
+        background: #16213e;
+        border-radius: 6px;
+        display: flex;
+        gap: 8px;
+      }
+
+      .dest-name {
+        font-size: 14px;
+        flex: 1;
+        overflow-wrap: break-word;
+        align-content: center;
+      }
+
+      .del-btn {
+        background: #e74c3c;
+        border: none;
+        color: #fff;
+        border-radius: 4px;
+        padding: 4px 10px;
+        cursor: pointer;
+        font-size: 14px;
+        line-height: 1;
+        flex-shrink: 0;
+        width: 30px;
+        align-content: center;
+      }
+
+      .prev-btn {
+        background: #4fc3f7;
+        border: none;
+        color: #1a1a2e;
+        border-radius: 4px;
+        padding: 4px 10px;
+        cursor: pointer;
+        font-size: 12px;
+        line-height: 1;
+        flex: 0 0;
+        margin-right: 4px;
+      }
+
+      .input-wrap {
+        position: relative;
+      }
+
+      input {
+        width: 100%;
+        padding: 8px;
+        margin: 8px 0;
+        border: 1px solid #333;
+        border-radius: 4px;
+        background: #0f3460;
+        color: #eee;
+        box-sizing: border-box;
+      }
+
+      button {
+        background: #4fc3f7;
+        color: #1a1a2e;
+        border: none;
+        padding: 10px 20px;
+        border-radius: 6px;
+        cursor: pointer;
+        font-weight: bold;
+        width: 100%;
+      }
+
+      .empty {
+        color: #666;
+        text-align: center;
+        padding: 20px;
+      }
+
+      .suggestions {
+        position: absolute;
+        top: 100%;
+        left: 0;
+        right: 0;
+        background: #16213e;
+        border: 1px solid #333;
+        border-radius: 0 0 4px 4px;
+        max-height: 200px;
+        overflow-y: auto;
+        z-index: 10;
+        display: none;
+        list-style: none;
+        padding: 0;
+        margin: 0;
+      }
+
+      #list {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+      }
+
+      .suggestions li {
+        padding: 8px;
+        cursor: pointer;
+        font-size: 13px;
+        border-bottom: 1px solid #333;
+      }
+
+      .suggestions li:hover {
+        background: #0f3460;
+      }
+
+      .section-title {
+        color: #4fc3f7;
+        font-size: 14px;
+        margin: 16px 0 8px;
+      }
+
+      .notice {
+        font-size: 11px;
+        color: #888;
+        padding: 16px 0 0;
+        line-height: 1.5;
+      }
+
+      .notice a {
+        color: #4fc3f7;
+      }
+
+      .notice strong {
+        color: #aaa;
+      }
+
+      .accordion-toggle {
+        background: #0f3460;
+        color: #4fc3f7;
+        border: none;
+        border-radius: 6px;
+        padding: 10px 12px;
+        width: 100%;
+        text-align: left;
+        font-size: 14px;
+        font-weight: bold;
+        cursor: pointer;
+        margin: 16px 0;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+      }
+
+      .accordion-toggle::after {
+        content: '\25BC';
+        font-size: 10px;
+        transition: transform 0.2s;
+      }
+
+      .accordion-toggle.open::after {
+        transform: rotate(180deg);
+      }
+
+      .accordion-content {
+        display: none;
+        overflow: hidden;
+      }
+
+      .accordion-content.open {
+        display: block;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Saved Destinations</h1>
+    <ul id="list"></ul>
+    <div
+      id="preview-modal"
+      onclick="closePreview(event)"
+      style="
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0, 0, 0, 0.85);
+        z-index: 1000;
+        align-items: center;
+        justify-content: center;
+        padding: 16px;
+      "
+    >
+      <div
+        style="position: relative; width: 100%; max-width: 400px"
+        onclick="event.stopPropagation()"
+      >
+        <span
+          onclick="closePreview()"
+          style="
+            position: absolute;
+            top: -14px;
+            right: -14px;
+            background: #e74c3c;
+            color: #fff;
+            border: none;
+            border-radius: 50%;
+            width: 28px;
+            height: 28px;
+            font-size: 20px;
+            cursor: pointer;
+            text-align: center;
+            line-height: 28px;
+            z-index: 10;
+            font-family: sans-serif;
+          "
+          >&times;</span
+        >
+        <canvas id="preview" style="width: 100%; border-radius: 6px; background: #0f3460"></canvas>
+      </div>
+    </div>
+    <div class="section-title">Add Destination</div>
+    <input type="text" id="name" placeholder="Label (optional)" autocomplete="off" />
+    <div class="input-wrap">
+      <input type="text" id="addr" placeholder="Type address or lat,lng" autocomplete="off" />
+      <ul id="suggestions" class="suggestions"></ul>
+    </div>
+    <button onclick="addDest()" style="background: #2ecc71; color: #fff">Add Destination</button>
+    <button onclick="saveCurrentPos()" style="margin-top: 8px">Save Current Position</button>
+    <button class="accordion-toggle" onclick="toggleAdvanced()" id="advanced-toggle">Advanced Options</button>
+    <div class="accordion-content" id="advanced-content">
+      <div class="section-title">Units</div>
+      <div style="display: flex; gap: 8px; margin: 8px 0">
+        <label
+          style="
+            flex: 1;
+            text-align: center;
+            padding: 8px;
+            background: #0f3460;
+            border-radius: 6px;
+            cursor: pointer;
+          "
+        >
+          <input type="radio" name="units" value="metric" __UNITS_METRIC_CHECKED__ /> km / m
+        </label>
+        <label
+          style="
+            flex: 1;
+            text-align: center;
+            padding: 8px;
+            background: #0f3460;
+            border-radius: 6px;
+            cursor: pointer;
+          "
+        >
+          <input type="radio" name="units" value="imperial" __UNITS_IMPERIAL_CHECKED__ /> mi / ft
+        </label>
+      </div>
+      <div class="section-title">Telemetry</div>
+      <label
+        style="
+          display: flex;
+          align-items: center;
+          gap: 8px;
+          padding: 8px;
+          background: #0f3460;
+          border-radius: 6px;
+          cursor: pointer;
+          margin: 8px 0;
+        "
+      >
+        <input type="checkbox" id="telemetry" __TELEMETRY_CHECKED__ /> Send anonymous usage data
+        (logs, errors) to improve the app, no coordinates, destination, names or unique identifier are
+        send (needs restart)
+      </label>
+      <div class="section-title">Experimental</div>
+      <label
+        style="
+          display: flex;
+          align-items: center;
+          gap: 8px;
+          padding: 8px;
+          background: #0f3460;
+          border-radius: 6px;
+          cursor: pointer;
+          margin: 8px 0;
+        "
+      >
+        <input type="checkbox" id="experimental" __EXPERIMENTAL_CHECKED__ /> Maximize message size for
+        faster map updates, needs app restart (may be unstable)
+        <div class="notice">
+          This option tries to maximize the size of the messages sent to the watch, improving map
+          update speed, but the behavior can lead to the app not updating at all. Sadly the emulator
+          and real hardware behave differently. Please try this option and enable telemetry so I can
+          make sure it works on every Pebble watch, not just my Time 2.
+        </div>
+      </label>
+    </div>
+    <button onclick="saveAndClose()">Save & Close</button>
+    <div class="section-title">Attributions</div>
+    <div class="notice">
+      &copy;
+      <a href="https://www.openstreetmap.org/copyright" target="_blank"
+        >OpenStreetMap contributors</a
+      >. Map data licensed under the Open Database License (ODbL). Routing by
+      <a href="http://project-osrm.org/" target="_blank">OSRM</a>. Geocoding by
+      <a href="https://photon.komoot.io" target="_blank">Photon</a> (Komoot).
+    </div>
+    <script>
+      var dests = __DESTINATIONS__;
+      var _userLat = __USER_LAT__;
+      var _userLng = __USER_LNG__;
+      var _hasUserPos = __HAS_USER_POS__;
+      var _routeMode = '__ROUTING_MODE__';
+      var _routingServers = {walking:'https://routing.openstreetmap.de/routed-foot/route/v1/foot/',cycling:'https://routing.openstreetmap.de/routed-bike/route/v1/cycling/',driving:'https://routing.openstreetmap.de/routed-car/route/v1/driving/'};
+
+      function render() {
+          var l = document.getElementById("list");
+          if (dests.length === 0) {
+              l.innerHTML = "<li class='empty'>No saved destinations</li>";
+              return
+          }
+          l.innerHTML = dests.map(function (d, i) {
+              return "<li class='dest'><span class='dest-name'>" + (d.name || d.lat + "," + d.lng) + "</span><button class='prev-btn' onclick='preview(" + i + ")'>Preview</button><button class='del-btn' onclick='remove(" + i + ")'>X</button></li>"
+          }).join("");
+      }
+
+      function remove(i) {
+          dests.splice(i, 1);
+          render();
+      }
+
+      var _timer = null;
+      document.getElementById("addr").addEventListener("input", function () {
+          clearTimeout(_timer);
+          var v = this.value.trim();
+          var sug = document.getElementById("suggestions");
+          if (v.length < 3 || /^-?\d/.test(v)) {
+              sug.style.display = "none";
+              return
+          }
+          _timer = setTimeout(function () {
+              var xhr = new XMLHttpRequest();
+              xhr.open("GET", "https://photon.komoot.io/api/?q=" + encodeURIComponent(v) + "&limit=7", true);
+              xhr.onload = function () {
+                  if (xhr.status >= 200 && xhr.status < 300) {
+                      var data = JSON.parse(xhr.responseText);
+                      if (data.features && data.features.length) {
+                          sug.innerHTML = data.features.map(function (f, i) {
+                              var p = f.properties;
+                              var label = p.name + (p.city ? ", " + p.city : "") + (p.country ? ", " + p.country : "");
+                              return "<li onclick='pickSuggestion(" + i + ")'>" + label + "</li>"
+                          }).join("");
+                          window._sugs = data.features;
+                          sug.style.display = "block"
+                      } else {
+                          sug.style.display = "none"
+                      }
+                  }
+              };
+              xhr.send()
+          }, 300)
+      });
+      document.getElementById("addr").addEventListener("blur", function () {
+          setTimeout(function () {
+              document.getElementById("suggestions").style.display = "none"
+          }, 200)
+      });
+
+      function pickSuggestion(i) {
+          var f = window._sugs[i];
+          if (!f) return;
+          var c = f.geometry.coordinates;
+          var nm = document.getElementById("name").value.trim() || f.properties.name;
+          dests.push({lat: c[1], lng: c[0], name: nm});
+          document.getElementById("addr").value = "";
+          document.getElementById("name").value = "";
+          document.getElementById("suggestions").style.display = "none";
+          window._sugs = null;
+          render()
+      }
+
+      function addDest() {
+          var addr = document.getElementById("addr").value.trim();
+          if (!addr) return;
+          var nm = document.getElementById("name").value.trim();
+          var parts = addr.split(",").map(function (s) {
+              return parseFloat(s.trim())
+          });
+          if (parts.length === 2 && !isNaN(parts[0]) && !isNaN(parts[1])) {
+              dests.push({lat: parts[0], lng: parts[1], name: nm || addr});
+              document.getElementById("addr").value = "";
+              document.getElementById("name").value = "";
+              render();
+              return
+          }
+          var xhr = new XMLHttpRequest();
+          xhr.open("GET", "https://photon.komoot.io/api/?q=" + encodeURIComponent(addr) + "&limit=1", true);
+          xhr.onload = function () {
+              if (xhr.status >= 200 && xhr.status < 300) {
+                  var d = JSON.parse(xhr.responseText);
+                  if (d.features && d.features.length) {
+                      var c = d.features[0].geometry.coordinates;
+                      dests.push({lat: c[1], lng: c[0], name: nm || d.features[0].properties.name || addr});
+                      document.getElementById("addr").value = "";
+                      document.getElementById("name").value = "";
+                      render()
+                  } else {
+                      alert("Not found")
+                  }
+              }
+          };
+          xhr.send()
+      }
+
+      function saveAndClose() {
+          var u = document.querySelector('input[name="units"]:checked');
+          var t = document.getElementById("telemetry").checked;
+          var e = document.getElementById("experimental").checked;
+          var payload = {
+              destinations: dests,
+              units: u ? u.value : "metric",
+              telemetry_enabled: t,
+              experimental_enabled: e
+          };
+          document.location = "pebblejs://close#" + encodeURIComponent(JSON.stringify(payload))
+      }
+
+      function saveCurrentPos() {
+          var nm = document.getElementById("name").value.trim();
+          if (!nm) {
+              alert("Name is required");
+              return
+          }
+          if (!_hasUserPos) {
+              alert("Current location not available");
+              return
+          }
+          dests.push({lat: _userLat, lng: _userLng, name: nm});
+          document.getElementById("name").value = "";
+          render()
+      }
+
+      function worldPx(lat, lng, zoom) {
+          var n = Math.pow(2, zoom);
+          return {
+              wx: (lng + 180) / 360 * n * 256,
+              wy: (1 - Math.log(Math.tan(lat * Math.PI / 180) + 1 / Math.cos(lat * Math.PI / 180)) / Math.PI) / 2 * n * 256
+          }
+      }
+
+      function loadTile(z, x, y) {
+          return new Promise(function (r) {
+              var img = new Image();
+              img.crossOrigin = "anonymous";
+              img.onload = function () {
+                  r({img: img, tx: x, ty: y})
+              };
+              img.onerror = function () {
+                  r(null)
+              };
+              img.src = "https://tile.openstreetmap.org/" + z + "/" + x + "/" + y + ".png"
+          })
+      }
+
+      function closePreview(e) {
+          if (e && e.target !== document.getElementById("preview-modal")) return;
+          document.getElementById("preview-modal").style.display = "none"
+      }
+
+      function preview(i) {
+        var d = dests[i];
+        if (!d) return;
+        document.getElementById("preview-modal").style.display = "flex";
+        var cv = document.getElementById("preview");
+        var maxW = Math.min(window.innerWidth - 32, 400);
+        var cw = Math.round(maxW);
+        var ch = Math.round(cw * 0.6);
+        cv.width = cw;
+        cv.height = ch;
+        var cx = cv.getContext("2d");
+        cx.fillStyle = "#0f3460";
+        cx.fillRect(0, 0, cw, ch);
+        cx.fillStyle = "#4fc3f7";
+        cx.font = "12px sans-serif";
+        cx.textAlign = "center";
+        cx.fillText("Loading route...", cw / 2, ch / 2);
+        cx.textAlign = "start";
+        var origin = _hasUserPos ? {lat: _userLat, lng: _userLng} : null;
+        var url = _routingServers[_routeMode] || _routingServers.walking;
+        if (origin) url += origin.lng + "," + origin.lat + ";";
+        url += d.lng + "," + d.lat + "?geometries=geojson&overview=full&steps=false";
+        fetch(url).then(function (r) {
+          return r.json()
+        }).then(function (rData) {
+          cx.fillStyle = "#0f3460";
+          cx.fillRect(0, 0, cw, ch);
+          if (!rData || rData.code !== "Ok" || !rData.routes || !rData.routes.length) {
+            cx.fillStyle = "#e74c3c";
+            cx.font = "12px sans-serif";
+            cx.fillText("Route not found", 10, 20);
+            return
+          }
+          var route = rData.routes[0];
+          var coords = route.geometry.coordinates;
+          var minLat, maxLat, minLng, maxLng;
+          if (origin) {
+            minLat = origin.lat;
+            maxLat = origin.lat;
+            minLng = origin.lng;
+            maxLng = origin.lng
+          } else {
+            minLat = coords[0][1];
+            maxLat = minLat;
+            minLng = coords[0][0];
+            maxLng = minLng
+          }
+
+          function xb(lat, lng) {
+            if (lat < minLat) minLat = lat;
+            if (lat > maxLat) maxLat = lat;
+            if (lng < minLng) minLng = lng;
+            if (lng > maxLng) maxLng = lng
+          }
+
+          if (origin) xb(origin.lat, origin.lng);
+          xb(d.lat, d.lng);
+          for (var j = 0; j < coords.length; j++) xb(coords[j][1], coords[j][0]);
+          var pad = Math.max((maxLat - minLat) * 0.15, (maxLng - minLng) * 0.15, 0.005);
+          minLat -= pad;
+          maxLat += pad;
+          minLng -= pad;
+          maxLng += pad;
+          var zoom = 3;
+          for (var z = 18; z >= 3; z--) {
+            var n = Math.pow(2, z);
+            var pa = worldPx(minLat, minLng, z);
+            var pb = worldPx(maxLat, maxLng, z);
+            var w = Math.abs(pb.wx - pa.wx);
+            var hh = Math.abs(pb.wy - pa.wy);
+            if (w <= cw * 0.92 && hh <= ch * 0.92) {
+              zoom = z;
+              break
+            }
+          }
+          var clat = (minLat + maxLat) / 2;
+          var clng = (minLng + maxLng) / 2;
+          var cp = worldPx(clat, clng, zoom);
+          var vl = cp.wx - cw / 2;
+          var vt = cp.wy - ch / 2;
+          var ts = 256;
+          var tx0 = Math.floor(vl / ts);
+          var ty0 = Math.floor(vt / ts);
+          var tx1 = Math.ceil((vl + cw) / ts);
+          var ty1 = Math.ceil((vt + ch) / ts);
+          var maxTile = Math.pow(2, zoom) - 1;
+          tx0 = Math.max(0, Math.min(maxTile, tx0));
+          ty0 = Math.max(0, Math.min(maxTile, ty0));
+          tx1 = Math.max(0, Math.min(maxTile, tx1));
+          ty1 = Math.max(0, Math.min(maxTile, ty1));
+          var tiles = [];
+          for (var tx = tx0; tx <= tx1; tx++) {
+            for (var ty = ty0; ty <= ty1; ty++) {
+              tiles.push(loadTile(zoom, tx, ty))
+            }
+          }
+          Promise.all(tiles).then(function (results) {
+            for (var k = 0; k < results.length; k++) {
+              var t = results[k];
+              if (!t) continue;
+              cx.drawImage(t.img, t.tx * ts - vl, t.ty * ts - vt, ts, ts)
+            }/* route polyline */
+            var pts = [];
+            for (var j = 0; j < coords.length; j++) {
+              var pp = worldPx(coords[j][1], coords[j][0], zoom);
+              pts.push(pp.wx - vl);
+              pts.push(pp.wy - vt)
+            }
+            cx.strokeStyle = "#3366ff";
+            cx.lineWidth = 3;
+            cx.beginPath();
+            cx.moveTo(pts[0], pts[1]);
+            for (var j = 1; j < coords.length; j++) cx.lineTo(pts[j * 2], pts[j * 2 + 1]);
+            cx.stroke();/* origin */
+            if (origin) {
+              var op = worldPx(origin.lat, origin.lng, zoom);
+              cx.fillStyle = "#22cc66";
+              cx.beginPath();
+              cx.arc(op.wx - vl, op.wy - vt, 5, 0, Math.PI * 2);
+              cx.fill()
+            }/* dest */
+            var dp = worldPx(d.lat, d.lng, zoom);
+            cx.fillStyle = "#ff3333";
+            cx.beginPath();
+            cx.arc(dp.wx - vl, dp.wy - vt, 5, 0, Math.PI * 2);
+            cx.fill();/* info */
+            var dist = route.distance;
+            var dur = route.duration;
+            var distStr = dist >= 1000 ? (dist / 1000).toFixed(1) + " km" : Math.round(dist) + " m";
+            var durStr = dur >= 60 ? Math.round(dur / 60) + " min" : Math.round(dur) + " sec";
+            cx.fillStyle = "rgba(0,0,0,0.7)";
+            cx.fillRect(8, ch - 30, 200, 22);
+            cx.fillStyle = "#fff";
+            cx.font = "12px sans-serif";
+            cx.fillText(distStr + " \u2022 " + durStr + " \u2022 " + _routeMode.charAt(0).toUpperCase() + _routeMode.slice(1), 14, ch - 14)
+          })
+        });
+      }
+      function toggleAdvanced() {
+        var content = document.getElementById("advanced-content");
+        var toggle = document.getElementById("advanced-toggle");
+        content.classList.toggle("open");
+        toggle.classList.toggle("open");
+      }
+      render();
+    </script>
+  </body>
+</html>
