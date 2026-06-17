@@ -19,7 +19,7 @@ var routing_1 = require("./server/routing");
 var helper_1 = require("./helper");
 var test_data_1 = require("./test-data");
 var DEFAULT_ZOOM = 16;
-var DEFAULT_CHUNK = 2000;
+var DEFAULT_CHUNK = Pebble.getActiveWatchInfo().platform === 'aplite' ? 128 : 2000;
 exports.RouteMode = {
     WALKING: 0,
     CYCLING: 1,
