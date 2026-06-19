@@ -98,7 +98,8 @@ var MapHandler = /** @class */ (function () {
                 console.time('renderForState');
                 console.time('pipeline');
             }
-            return (0, rxjs_1.from)((0, stateRenderer_1.renderForState)(state, _this.existingRoute, _this.isBw, _this.userVerticalOffset)).pipe((0, rxjs_1.tap)(function () {
+            var stateWithBrightness = __assign(__assign({}, state), { brightness: (0, helper_1.loadBrightness)() });
+            return (0, rxjs_1.from)((0, stateRenderer_1.renderForState)(stateWithBrightness, _this.existingRoute, _this.isBw, _this.userVerticalOffset)).pipe((0, rxjs_1.tap)(function () {
                 if (test_data_1.ENABLE_LOGS)
                     console.timeEnd('renderForState');
             }));

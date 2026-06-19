@@ -31,15 +31,28 @@ function quantizeToPebble(rgba, width, height) {
     }
     return { pixels: pixels, palette: exports.pebblePalette };
 }
-function quantizeToPebble2Bit(rgba, width, height) {
+function quantizeToPebble2Bit(rgba, width, height, brightness) {
+    if (brightness === void 0) { brightness = 0; }
     var numPixels = width * height;
     var packedLen = Math.ceil(numPixels / 4);
     var packed = new Uint8Array(packedLen);
+    var whiteCutoff = 0.85;
+    var blackCutoff = (100 - brightness) / 100;
     for (var i = 0; i < numPixels; i++) {
-        var r = rgba[i * 4];
-        var g = rgba[i * 4 + 1];
-        var b = rgba[i * 4 + 2];
-        var gray = Math.round((r + g + b) / 3 / 85);
+        var rawL = (rgba[i * 4] + rgba[i * 4 + 1] + rgba[i * 4 + 2]) / 3 / 255;
+        var processedL;
+        if (rawL <= blackCutoff) {
+            processedL = 0.0;
+        }
+        else if (rawL >= whiteCutoff) {
+            processedL = 1.0;
+        }
+        else {
+            // Normalize and push through contrast curve
+            var normalized = (rawL - blackCutoff) / (whiteCutoff - blackCutoff);
+            processedL = Math.pow(normalized, 1.5);
+        }
+        var gray = Math.round(processedL * 3);
         var idx = i >> 2;
         var shift = (3 - (i & 3)) << 1;
         packed[idx] = (packed[idx] & ~(3 << shift)) | ((gray & 3) << shift);

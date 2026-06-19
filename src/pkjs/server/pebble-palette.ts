@@ -41,15 +41,27 @@ export function quantizeToPebble2Bit(
   rgba: Uint8Array,
   width: number,
   height: number,
+  brightness: number = 0,
 ): { pixels: Uint8Array } {
   const numPixels = width * height;
   const packedLen = Math.ceil(numPixels / 4);
   const packed = new Uint8Array(packedLen);
+  const whiteCutoff = 0.85;
+  const blackCutoff = (100 - brightness) / 100;
+
   for (let i = 0; i < numPixels; i++) {
-    const r = rgba[i * 4];
-    const g = rgba[i * 4 + 1];
-    const b = rgba[i * 4 + 2];
-    const gray = Math.round((r + g + b) / 3 / 85);
+    const rawL = (rgba[i * 4] + rgba[i * 4 + 1] + rgba[i * 4 + 2]) / 3 / 255; 
+    var processedL;
+    if (rawL <= blackCutoff) {
+      processedL = 0.0;
+    } else if (rawL >= whiteCutoff) {
+      processedL = 1.0;
+    } else {
+      // Normalize and push through contrast curve
+      const normalized = (rawL - blackCutoff) / (whiteCutoff - blackCutoff);
+      processedL = Math.pow(normalized, 1.5); 
+    }
+    const gray = Math.round(processedL * 3);
     const idx = i >> 2;
     const shift = (3 - (i & 3)) << 1;
     packed[idx] = (packed[idx] & ~(3 << shift)) | ((gray & 3) << shift);

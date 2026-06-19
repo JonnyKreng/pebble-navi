@@ -46,8 +46,8 @@ static void apply_palette(GBitmap* bmp)
 #ifdef PBL_BW
     GColor8* pal = malloc(4 * sizeof(GColor8));
     if (!pal) return;
-    pal[0].argb = 0xC0;
-    pal[1].argb = 0xD5;
+    pal[0].argb = 0x0;
+    pal[1].argb = 0x30;
     pal[2].argb = 0xEA;
     pal[3].argb = 0xFF;
     gbitmap_set_palette(bmp, pal, true);

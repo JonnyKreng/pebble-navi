@@ -9,6 +9,8 @@ import {
   loadExperimentalEnabled,
   saveExperimentalEnabled,
   loadSettings,
+  loadBrightness,
+  saveBrightness,
 } from './helper';
 import { SETTINGS_HTML } from './settings-template';
 
@@ -17,6 +19,7 @@ export function buildSettings(userLat?: number, userLng?: number): string {
   const units = loadUnits();
   const telemetry = loadTelemetryEnabled();
   const experimental = loadExperimentalEnabled();
+  const brightness = loadBrightness();
 
   let html = SETTINGS_HTML;
   html = html.replace('__DESTINATIONS__', JSON.stringify(destinations));
@@ -24,6 +27,7 @@ export function buildSettings(userLat?: number, userLng?: number): string {
   html = html.replace('__UNITS_IMPERIAL_CHECKED__', units === 'imperial' ? ' checked' : '');
   html = html.replace('__TELEMETRY_CHECKED__', telemetry ? ' checked' : '');
   html = html.replace('__EXPERIMENTAL_CHECKED__', experimental ? ' checked' : '');
+  html = html.replace(/__BRIGHTNESS_VALUE__/g, String(brightness));
   html = html.replace('__ROUTING_MODE__', loadSettings().mode);
   html = html.replace('__USER_LAT__', userLat !== undefined ? String(userLat) : 'undefined');
   html = html.replace('__USER_LNG__', userLng !== undefined ? String(userLng) : 'undefined');
@@ -45,6 +49,9 @@ export function saveSettings(response: string): Destination[] {
     }
     if (data.experimental_enabled !== undefined) {
       saveExperimentalEnabled(data.experimental_enabled);
+    }
+    if (data.brightness !== undefined) {
+      saveBrightness(data.brightness);
     }
   } catch (err) {
     console.log('Config parse error: ' + err);

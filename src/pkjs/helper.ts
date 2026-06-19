@@ -6,6 +6,7 @@ const UNITS_KEY = 'units';
 const SETTINGS_KEY = 'nav_settings';
 const TELEMETRY_KEY = 'telemetry_enabled';
 const EXPERIMENTAL_KEY = 'experimental_enabled';
+const BRIGHTNESS_KEY = 'brightness_value';
 
 export interface NavSettings {
   zoom: number;
@@ -49,6 +50,21 @@ export function loadExperimentalEnabled(): boolean {
 
 export function saveExperimentalEnabled(enabled: boolean): void {
   localStorage.setItem(EXPERIMENTAL_KEY, enabled ? 'true' : 'false');
+}
+
+export function loadBrightness(): number {
+  const saved = localStorage.getItem(BRIGHTNESS_KEY);
+  if (saved !== null) {
+    const parsed = parseInt(saved, 10);
+    if (!isNaN(parsed)) {
+      return parsed;
+    }
+  }
+  return 40;
+}
+
+export function saveBrightness(brightness: number): void {
+  localStorage.setItem(BRIGHTNESS_KEY, String(brightness));
 }
 
 export function loadDestinations(): Destination[] {

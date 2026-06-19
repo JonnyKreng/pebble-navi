@@ -8,6 +8,8 @@ exports.loadTelemetryEnabled = loadTelemetryEnabled;
 exports.saveTelemetryEnabled = saveTelemetryEnabled;
 exports.loadExperimentalEnabled = loadExperimentalEnabled;
 exports.saveExperimentalEnabled = saveExperimentalEnabled;
+exports.loadBrightness = loadBrightness;
+exports.saveBrightness = saveBrightness;
 exports.loadDestinations = loadDestinations;
 exports.saveDestinations = saveDestinations;
 exports.encodeLZSS = encodeLZSS;
@@ -20,6 +22,7 @@ var UNITS_KEY = 'units';
 var SETTINGS_KEY = 'nav_settings';
 var TELEMETRY_KEY = 'telemetry_enabled';
 var EXPERIMENTAL_KEY = 'experimental_enabled';
+var BRIGHTNESS_KEY = 'brightness_value';
 function loadSettings() {
     try {
         var saved = localStorage.getItem(SETTINGS_KEY);
@@ -50,6 +53,19 @@ function loadExperimentalEnabled() {
 }
 function saveExperimentalEnabled(enabled) {
     localStorage.setItem(EXPERIMENTAL_KEY, enabled ? 'true' : 'false');
+}
+function loadBrightness() {
+    var saved = localStorage.getItem(BRIGHTNESS_KEY);
+    if (saved !== null) {
+        var parsed = parseInt(saved, 10);
+        if (!isNaN(parsed)) {
+            return parsed;
+        }
+    }
+    return 40;
+}
+function saveBrightness(brightness) {
+    localStorage.setItem(BRIGHTNESS_KEY, String(brightness));
 }
 function loadDestinations() {
     try {

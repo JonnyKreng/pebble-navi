@@ -20,6 +20,7 @@ import {
   loadSettings,
   loadUnits,
   saveSettings,
+  loadBrightness,
 } from './helper';
 import { ENABLE_LOGS } from './test-data';
 
@@ -129,8 +130,9 @@ export class MapHandler {
             console.time('renderForState');
             console.time('pipeline');
           }
+          const stateWithBrightness = { ...state, brightness: loadBrightness() };
           return from(
-            renderForState(state, this.existingRoute, this.isBw, this.userVerticalOffset),
+            renderForState(stateWithBrightness, this.existingRoute, this.isBw, this.userVerticalOffset),
           ).pipe(
             tap(() => {
               if (ENABLE_LOGS) console.timeEnd('renderForState');
