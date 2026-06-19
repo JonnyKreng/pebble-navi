@@ -200,6 +200,14 @@ export class MapHandler {
     if (ENABLE_LOGS) console.log('Chunk size set to', size);
   }
 
+  public onSettingsChanged(): void {
+    this.lastRenderTime = 0;
+    this.lastRenderedState = null;
+    this.mapState.next({
+      ...this.mapState.value,
+    });
+  }
+
   public getRouteMode(): number {
     const mode = this.mapState.value.mode;
     if (mode === 'walking') return 0;

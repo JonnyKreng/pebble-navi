@@ -112,7 +112,10 @@ fromEvent(Pebble, 'showConfiguration').subscribe(() => {
 fromEvent(Pebble, 'webviewclosed').subscribe((e) => {
   console.log('webviewclosed event');
   try {
-    if (e.response) saveSettings(e.response);
+    if (e.response) {
+      saveSettings(e.response);
+      mapHandler?.onSettingsChanged();
+    }
     flushTelemetry();
   } catch (e) {
     console.error(e);

@@ -149,6 +149,11 @@ var MapHandler = /** @class */ (function () {
         if (test_data_1.ENABLE_LOGS)
             console.log('Chunk size set to', size);
     };
+    MapHandler.prototype.onSettingsChanged = function () {
+        this.lastRenderTime = 0;
+        this.lastRenderedState = null;
+        this.mapState.next(__assign({}, this.mapState.value));
+    };
     MapHandler.prototype.getRouteMode = function () {
         var mode = this.mapState.value.mode;
         if (mode === 'walking')

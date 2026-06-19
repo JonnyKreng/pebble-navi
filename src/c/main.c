@@ -27,6 +27,19 @@ static void try_flush_pending(void)
     s_pending = false;
 }
 
+int main_get_text_layers_height(void)
+{
+    if (s_next_step_layer && !layer_get_hidden(text_layer_get_layer(s_next_step_layer)))
+    {
+        return 36;
+    }
+    if (s_route_summary_layer && !layer_get_hidden(text_layer_get_layer(s_route_summary_layer)))
+    {
+        return 18;
+    }
+    return 0;
+}
+
 static void inbox_received(DictionaryIterator* iter, void* ctx)
 {
     //APP_LOG(APP_LOG_LEVEL_DEBUG, "Received AppMessage");
@@ -79,6 +92,11 @@ static void inbox_received(DictionaryIterator* iter, void* ctx)
     if (route_active)
     {
         menu_set_has_route(route_active->value->int32 != 0);
+    }
+
+    if (nav_line1 || nav_line2)
+    {
+        layer_mark_dirty(s_map_layer);
     }
 }
 

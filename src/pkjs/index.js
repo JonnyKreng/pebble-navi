@@ -91,8 +91,10 @@ var mapHandler;
 (0, rxjs_1.fromEvent)(Pebble, 'webviewclosed').subscribe(function (e) {
     console.log('webviewclosed event');
     try {
-        if (e.response)
+        if (e.response) {
             (0, settings_1.saveSettings)(e.response);
+            mapHandler === null || mapHandler === void 0 ? void 0 : mapHandler.onSettingsChanged();
+        }
         (0, telemetry_1.flushTelemetry)();
     }
     catch (e) {
