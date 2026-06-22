@@ -3,6 +3,7 @@ import {
   fetchRoute,
   findNextStep,
   bearingTo,
+  routeProgress,
   type RouteResult,
   type RouteStep,
 } from './routing.js';
@@ -103,6 +104,17 @@ export async function renderForState(
     (t): t is { tx: number; ty: number; buffer: Uint8Array } => t !== null,
   );
 
+  let renderRoute = route;
+  if (route && s.currentPos) {
+    const prog = routeProgress(route.coordinates, s.currentPos);
+    if (prog.segIdx >= 0) {
+      const ahead = route.coordinates.slice(prog.segIdx + 1);
+      if (ahead.length >= 2) {
+        renderRoute = { ...route, coordinates: ahead, distance: route.distance - prog.cumDist, duration: route.duration * ((route.distance - prog.cumDist) / route.distance) };
+      }
+    }
+  }
+
   const rgba = renderMap({
     width: renderW,
     height: renderH,
@@ -115,7 +127,7 @@ export async function renderForState(
     dest: s.dest,
     currentPos: s.currentPos,
     bearing: s.bearing,
-    route,
+    route: renderRoute,
     tiles,
     userOffsetY: renderH / 2,
     rotation: mapRotation,

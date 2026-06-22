@@ -4,7 +4,7 @@ import { loadDestinations, saveDestinations } from './helper';
 import { fromEvent, map, Subject, takeUntil, tap } from 'rxjs';
 import { sendDestinationsToWatch } from './destionations';
 import { MapHandler } from './map-handler';
-import { ENABLE_LOGS, testAutoMove, testOverride } from './test-data';
+import { DO_MOVEMENT_TESTING, ENABLE_LOGS, testAutoMove, testOverride } from './test-data';
 import { initTelemetry, flushTelemetry, setWatchInfo } from './telemetry';
 
 initTelemetry();
@@ -97,9 +97,7 @@ fromEvent(Pebble, 'showConfiguration').subscribe(() => {
       (pos) => {
         Pebble.openURL(
           'data:text/html,' +
-            encodeURIComponent(
-              buildSettings(pos.coords.latitude, pos.coords.longitude),
-            ),
+            encodeURIComponent(buildSettings(pos.coords.latitude, pos.coords.longitude)),
         );
       },
       () => {
@@ -163,7 +161,9 @@ fromEvent(Pebble, 'ready')
       });
 
       navigationWatcher = navigator.geolocation.watchPosition(
-        (pos) => location.next(testOverride(pos)),
+        (pos) => {
+          if (!DO_MOVEMENT_TESTING) location.next(testOverride(pos));
+        },
         console.error,
         {
           enableHighAccuracy: true,

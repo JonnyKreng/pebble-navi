@@ -6,8 +6,8 @@ exports.testAutoMove = testAutoMove;
 var rxjs_1 = require("rxjs");
 var telemetry_1 = require("./telemetry");
 exports.ENABLE_LOGS = (0, telemetry_1.isTelemetryEnabled)();
-exports.DO_TESTING = true;
-exports.DO_MOVEMENT_TESTING = true;
+exports.DO_TESTING = false;
+exports.DO_MOVEMENT_TESTING = false;
 exports.TEST_DESTINATIONS = exports.DO_TESTING
     ? [
         {

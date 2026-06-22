@@ -131,7 +131,10 @@ var mapHandler;
             },
             error: function (err) { return console.error('Location subscription error:', err); },
         });
-        navigationWatcher = navigator.geolocation.watchPosition(function (pos) { return location.next((0, test_data_1.testOverride)(pos)); }, console.error, {
+        navigationWatcher = navigator.geolocation.watchPosition(function (pos) {
+            if (!test_data_1.DO_MOVEMENT_TESTING)
+                location.next((0, test_data_1.testOverride)(pos));
+        }, console.error, {
             enableHighAccuracy: true,
             maximumAge: 5000,
         });

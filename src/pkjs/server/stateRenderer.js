@@ -1,4 +1,15 @@
 "use strict";
+var __assign = (this && this.__assign) || function () {
+    __assign = Object.assign || function(t) {
+        for (var s, i = 1, n = arguments.length; i < n; i++) {
+            s = arguments[i];
+            for (var p in s) if (Object.prototype.hasOwnProperty.call(s, p))
+                t[p] = s[p];
+        }
+        return t;
+    };
+    return __assign.apply(this, arguments);
+};
 var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
     function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
     return new (P || (P = Promise))(function (resolve, reject) {
@@ -46,7 +57,7 @@ var lastBearing;
 exports.USER_Y_OFFSET = 0.85;
 function renderForState(s_1, existingRoute_1) {
     return __awaiter(this, arguments, void 0, function (s, existingRoute, isBw, userVerticalOffset) {
-        var center, route, _a, _b, nextStep, ns, mapRotation, outUserOffsetY, renderW, renderH, cosA, sinA, maxDY, centerPx, vl, vt, tx0, ty0, tx1, ty1, tilePromises, _loop_1, tx, tileResults, tiles, rgba, pixels;
+        var center, route, _a, _b, nextStep, ns, mapRotation, outUserOffsetY, renderW, renderH, cosA, sinA, maxDY, centerPx, vl, vt, tx0, ty0, tx1, ty1, tilePromises, _loop_1, tx, tileResults, tiles, renderRoute, prog, ahead, rgba, pixels;
         var _c;
         if (isBw === void 0) { isBw = false; }
         if (userVerticalOffset === void 0) { userVerticalOffset = exports.USER_Y_OFFSET; }
@@ -122,6 +133,16 @@ function renderForState(s_1, existingRoute_1) {
                 case 6:
                     tileResults = _d.sent();
                     tiles = tileResults.filter(function (t) { return t !== null; });
+                    renderRoute = route;
+                    if (route && s.currentPos) {
+                        prog = (0, routing_js_1.routeProgress)(route.coordinates, s.currentPos);
+                        if (prog.segIdx >= 0) {
+                            ahead = route.coordinates.slice(prog.segIdx + 1);
+                            if (ahead.length >= 2) {
+                                renderRoute = __assign(__assign({}, route), { coordinates: ahead, distance: route.distance - prog.cumDist, duration: route.duration * ((route.distance - prog.cumDist) / route.distance) });
+                            }
+                        }
+                    }
                     rgba = (0, renderer_js_1.renderMap)({
                         width: renderW,
                         height: renderH,
@@ -134,7 +155,7 @@ function renderForState(s_1, existingRoute_1) {
                         dest: s.dest,
                         currentPos: s.currentPos,
                         bearing: s.bearing,
-                        route: route,
+                        route: renderRoute,
                         tiles: tiles,
                         userOffsetY: renderH / 2,
                         rotation: mapRotation,
