@@ -20,6 +20,9 @@ import {
   loadSettings,
   loadUnits,
   saveSettings,
+  loadBrightness,
+  loadShowDestinationHint,
+  loadMinimumUpdateTime,
 } from './helper';
 import { ENABLE_LOGS } from './test-data';
 
@@ -45,6 +48,8 @@ export class MapHandler {
   private sending = false;
   private rendering = false;
   private lastRecalc = 0;
+  private lastRenderTime = 0;
+  private lastRenderedState: MapState | null = null;
   private isBw = false;
   private rotationMode = false;
   private isEmulator = false;
@@ -99,6 +104,28 @@ export class MapHandler {
             state.mode !== undefined,
         ),
         map((state: PartialMapState) => <MapState>state),
+        filter((state: MapState) => {
+          const now = Date.now();
+          const minUpdateSecs = loadMinimumUpdateTime();
+          const minUpdateTimeMs = minUpdateSecs * 1000;
+
+          if (this.lastRenderedState !== null && minUpdateTimeMs > 0) {
+            const isManualAction =
+              state.zoom !== this.lastRenderedState.zoom ||
+              state.mode !== this.lastRenderedState.mode ||
+              state.rotationMode !== this.lastRenderedState.rotationMode ||
+              JSON.stringify(state.dest) !== JSON.stringify(this.lastRenderedState.dest) ||
+              JSON.stringify(state.origin) !== JSON.stringify(this.lastRenderedState.origin);
+
+            if (!isManualAction) {
+              if (now - this.lastRenderTime < minUpdateTimeMs) {
+                if (ENABLE_LOGS) console.log('Throttling location update: ' + (now - this.lastRenderTime) + 'ms since last render');
+                return false;
+              }
+            }
+          }
+          return true;
+        }),
         filter(() => !this.rendering),
         tap(() => (this.rendering = true)),
         tap((state) => {
@@ -129,16 +156,22 @@ export class MapHandler {
             console.time('renderForState');
             console.time('pipeline');
           }
+          const stateWithBrightness = { ...state, brightness: loadBrightness() };
           return from(
-            renderForState(state, this.existingRoute, this.isBw, this.userVerticalOffset),
+            renderForState(stateWithBrightness, this.existingRoute, this.isBw, this.userVerticalOffset),
           ).pipe(
             tap(() => {
               if (ENABLE_LOGS) console.timeEnd('renderForState');
             }),
+            map((output) => ({ output, state })),
           );
         }),
         tap(() => (this.rendering = false)),
-        tap((output) => this.onMapRendered(output)),
+        tap(({ output, state }) => {
+          this.lastRenderTime = Date.now();
+          this.lastRenderedState = state;
+          this.onMapRendered(output);
+        }),
         catchError((err) => {
           console.error('Map pipeline error:', err);
           this.rendering = false;
@@ -165,6 +198,14 @@ export class MapHandler {
     if (!loadExperimentalEnabled()) return;
     this.chunk_size = Math.max(DEFAULT_CHUNK, size - 128);
     if (ENABLE_LOGS) console.log('Chunk size set to', size);
+  }
+
+  public onSettingsChanged(): void {
+    this.lastRenderTime = 0;
+    this.lastRenderedState = null;
+    this.mapState.next({
+      ...this.mapState.value,
+    });
   }
 
   public getRouteMode(): number {
@@ -352,8 +393,13 @@ export class MapHandler {
     const units = loadUnits();
 
     if (!output.route) {
-      dict.NAV_INFO_LINE1 = 'Select Destination';
-      dict.NAV_INFO_LINE2 = 'Add Destination in Pebble-App';
+      if (loadShowDestinationHint()) {
+        dict.NAV_INFO_LINE1 = 'Select Destination';
+        dict.NAV_INFO_LINE2 = 'Add Destination in Pebble-App';
+      } else {
+        dict.NAV_INFO_LINE1 = '';
+        dict.NAV_INFO_LINE2 = '';
+      }
       dict.ROUTE_ACTIVE = 0;
     } else {
       const d = output.route.distance;

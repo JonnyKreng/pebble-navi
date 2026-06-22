@@ -141,7 +141,7 @@ function renderForState(s_1, existingRoute_1) {
                         isBw: isBw,
                     });
                     pixels = isBw
-                        ? (0, pebble_palette_js_1.quantizeToPebble2Bit)(rgba, s.width, s.height).pixels
+                        ? (0, pebble_palette_js_1.quantizeToPebble2Bit)(rgba, s.width, s.height, s.brightness).pixels
                         : (0, pebble_palette_js_1.quantizeToPebble)(rgba, s.width, s.height).pixels;
                     return [2 /*return*/, {
                             pixels: pixels,

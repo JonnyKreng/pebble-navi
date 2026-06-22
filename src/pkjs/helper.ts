@@ -6,6 +6,9 @@ const UNITS_KEY = 'units';
 const SETTINGS_KEY = 'nav_settings';
 const TELEMETRY_KEY = 'telemetry_enabled';
 const EXPERIMENTAL_KEY = 'experimental_enabled';
+const BRIGHTNESS_KEY = 'brightness_value';
+const SHOW_DESTINATION_HINT_KEY = 'show_destination_hint';
+const MINIMUM_UPDATE_TIME_KEY = 'minimum_update_time';
 
 export interface NavSettings {
   zoom: number;
@@ -49,6 +52,45 @@ export function loadExperimentalEnabled(): boolean {
 
 export function saveExperimentalEnabled(enabled: boolean): void {
   localStorage.setItem(EXPERIMENTAL_KEY, enabled ? 'true' : 'false');
+}
+
+export function loadBrightness(): number {
+  const saved = localStorage.getItem(BRIGHTNESS_KEY);
+  if (saved !== null) {
+    const parsed = parseInt(saved, 10);
+    if (!isNaN(parsed)) {
+      return parsed;
+    }
+  }
+  return 40;
+}
+
+export function saveBrightness(brightness: number): void {
+  localStorage.setItem(BRIGHTNESS_KEY, String(brightness));
+}
+
+export function loadShowDestinationHint(): boolean {
+  const saved = localStorage.getItem(SHOW_DESTINATION_HINT_KEY);
+  return saved !== 'false';
+}
+
+export function saveShowDestinationHint(enabled: boolean): void {
+  localStorage.setItem(SHOW_DESTINATION_HINT_KEY, enabled ? 'true' : 'false');
+}
+
+export function loadMinimumUpdateTime(): number {
+  const saved = localStorage.getItem(MINIMUM_UPDATE_TIME_KEY);
+  if (saved !== null) {
+    const parsed = parseInt(saved, 10);
+    if (!isNaN(parsed)) {
+      return parsed;
+    }
+  }
+  return 0;
+}
+
+export function saveMinimumUpdateTime(time: number): void {
+  localStorage.setItem(MINIMUM_UPDATE_TIME_KEY, String(time));
 }
 
 export function loadDestinations(): Destination[] {

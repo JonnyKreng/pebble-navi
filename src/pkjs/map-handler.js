@@ -38,6 +38,8 @@ var MapHandler = /** @class */ (function () {
         this.sending = false;
         this.rendering = false;
         this.lastRecalc = 0;
+        this.lastRenderTime = 0;
+        this.lastRenderedState = null;
         this.isBw = false;
         this.rotationMode = false;
         this.isEmulator = false;
@@ -81,7 +83,26 @@ var MapHandler = /** @class */ (function () {
                 state.width !== undefined &&
                 state.currentPos !== undefined &&
                 state.mode !== undefined;
-        }), (0, rxjs_1.map)(function (state) { return state; }), (0, rxjs_1.filter)(function () { return !_this.rendering; }), (0, rxjs_1.tap)(function () { return (_this.rendering = true); }), (0, rxjs_1.tap)(function (state) {
+        }), (0, rxjs_1.map)(function (state) { return state; }), (0, rxjs_1.filter)(function (state) {
+            var now = Date.now();
+            var minUpdateSecs = (0, helper_1.loadMinimumUpdateTime)();
+            var minUpdateTimeMs = minUpdateSecs * 1000;
+            if (_this.lastRenderedState !== null && minUpdateTimeMs > 0) {
+                var isManualAction = state.zoom !== _this.lastRenderedState.zoom ||
+                    state.mode !== _this.lastRenderedState.mode ||
+                    state.rotationMode !== _this.lastRenderedState.rotationMode ||
+                    JSON.stringify(state.dest) !== JSON.stringify(_this.lastRenderedState.dest) ||
+                    JSON.stringify(state.origin) !== JSON.stringify(_this.lastRenderedState.origin);
+                if (!isManualAction) {
+                    if (now - _this.lastRenderTime < minUpdateTimeMs) {
+                        if (test_data_1.ENABLE_LOGS)
+                            console.log('Throttling location update: ' + (now - _this.lastRenderTime) + 'ms since last render');
+                        return false;
+                    }
+                }
+            }
+            return true;
+        }), (0, rxjs_1.filter)(function () { return !_this.rendering; }), (0, rxjs_1.tap)(function () { return (_this.rendering = true); }), (0, rxjs_1.tap)(function (state) {
             if (_this.existingRoute !== undefined &&
                 state.currentPos !== undefined &&
                 state.dest !== undefined) {
@@ -98,11 +119,17 @@ var MapHandler = /** @class */ (function () {
                 console.time('renderForState');
                 console.time('pipeline');
             }
-            return (0, rxjs_1.from)((0, stateRenderer_1.renderForState)(state, _this.existingRoute, _this.isBw, _this.userVerticalOffset)).pipe((0, rxjs_1.tap)(function () {
+            var stateWithBrightness = __assign(__assign({}, state), { brightness: (0, helper_1.loadBrightness)() });
+            return (0, rxjs_1.from)((0, stateRenderer_1.renderForState)(stateWithBrightness, _this.existingRoute, _this.isBw, _this.userVerticalOffset)).pipe((0, rxjs_1.tap)(function () {
                 if (test_data_1.ENABLE_LOGS)
                     console.timeEnd('renderForState');
-            }));
-        }), (0, rxjs_1.tap)(function () { return (_this.rendering = false); }), (0, rxjs_1.tap)(function (output) { return _this.onMapRendered(output); }), (0, rxjs_1.catchError)(function (err) {
+            }), (0, rxjs_1.map)(function (output) { return ({ output: output, state: state }); }));
+        }), (0, rxjs_1.tap)(function () { return (_this.rendering = false); }), (0, rxjs_1.tap)(function (_a) {
+            var output = _a.output, state = _a.state;
+            _this.lastRenderTime = Date.now();
+            _this.lastRenderedState = state;
+            _this.onMapRendered(output);
+        }), (0, rxjs_1.catchError)(function (err) {
             console.error('Map pipeline error:', err);
             _this.rendering = false;
             return rxjs_1.EMPTY;
@@ -121,6 +148,11 @@ var MapHandler = /** @class */ (function () {
         this.chunk_size = Math.max(DEFAULT_CHUNK, size - 128);
         if (test_data_1.ENABLE_LOGS)
             console.log('Chunk size set to', size);
+    };
+    MapHandler.prototype.onSettingsChanged = function () {
+        this.lastRenderTime = 0;
+        this.lastRenderedState = null;
+        this.mapState.next(__assign({}, this.mapState.value));
     };
     MapHandler.prototype.getRouteMode = function () {
         var mode = this.mapState.value.mode;
@@ -263,8 +295,14 @@ var MapHandler = /** @class */ (function () {
         var dict = {};
         var units = (0, helper_1.loadUnits)();
         if (!output.route) {
-            dict.NAV_INFO_LINE1 = 'Select Destination';
-            dict.NAV_INFO_LINE2 = 'Add Destination in Pebble-App';
+            if ((0, helper_1.loadShowDestinationHint)()) {
+                dict.NAV_INFO_LINE1 = 'Select Destination';
+                dict.NAV_INFO_LINE2 = 'Add Destination in Pebble-App';
+            }
+            else {
+                dict.NAV_INFO_LINE1 = '';
+                dict.NAV_INFO_LINE2 = '';
+            }
             dict.ROUTE_ACTIVE = 0;
         }
         else {

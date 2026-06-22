@@ -46,8 +46,8 @@ static void apply_palette(GBitmap* bmp)
 #ifdef PBL_BW
     GColor8* pal = malloc(4 * sizeof(GColor8));
     if (!pal) return;
-    pal[0].argb = 0xC0;
-    pal[1].argb = 0xD5;
+    pal[0].argb = 0x0;
+    pal[1].argb = 0x30;
     pal[2].argb = 0xEA;
     pal[3].argb = 0xFF;
     gbitmap_set_palette(bmp, pal, true);
@@ -88,6 +88,8 @@ static void time_tick_handler(struct tm* tick_time, TimeUnits units_changed)
     strftime(s_time_text, sizeof(s_time_text), "%H:%M", tick_time);
     if (s_map_layer) layer_mark_dirty(s_map_layer);
 }
+
+int main_get_text_layers_height(void);
 
 static void map_update_proc(Layer* layer, GContext* ctx)
 {
@@ -168,13 +170,14 @@ static void map_update_proc(Layer* layer, GContext* ctx)
     graphics_context_set_text_color(ctx, GColorWhite);
     graphics_draw_text(ctx, "+", fonts_get_system_font(FONT_KEY_GOTHIC_18_BOLD), GRect(plus_rect.origin.x, plus_rect.origin.y - 2, plus_rect.size.w, plus_rect.size.h), GTextOverflowModeTrailingEllipsis, GTextAlignmentCenter, NULL);
 
-    GRect minus_rect = GRect(bounds.size.w - icon_size - MARGINE, bounds.size.h - 36 - icon_size - MARGINE, icon_size, icon_size);
+    int text_height = main_get_text_layers_height();
+    GRect minus_rect = GRect(bounds.size.w - icon_size - MARGINE, bounds.size.h - text_height - icon_size - MARGINE, icon_size, icon_size);
     graphics_context_set_fill_color(ctx, GColorBulgarianRose);
     graphics_fill_rect(ctx, minus_rect, icon_size / 2, GCornerTopLeft);
     graphics_context_set_text_color(ctx, GColorWhite);
     graphics_draw_text(ctx, "-", fonts_get_system_font(FONT_KEY_GOTHIC_18_BOLD), GRect(minus_rect.origin.x, minus_rect.origin.y - 2, minus_rect.size.w, minus_rect.size.h), GTextOverflowModeTrailingEllipsis, GTextAlignmentCenter, NULL);
 
-    GPoint gear_center = GPoint(bounds.size.w - icon_size / 2 - MARGINE, (bounds.size.h - 36) / 2);
+    GPoint gear_center = GPoint(bounds.size.w - icon_size / 2 - MARGINE, (bounds.size.h - text_height) / 2);
     GRect gear_rect = GRect(gear_center.x - icon_size / 2, gear_center.y - icon_size / 2, icon_size, icon_size);
     graphics_context_set_fill_color(ctx, GColorBulgarianRose);
     graphics_fill_rect(ctx, gear_rect, icon_size / 2, GCornersLeft);

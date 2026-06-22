@@ -23,6 +23,7 @@ export interface MapState {
   width: number;
   height: number;
   rotationMode: boolean;
+  brightness?: number;
 }
 
 export interface RenderOutput {
@@ -122,7 +123,7 @@ export async function renderForState(
   });
 
   const pixels = isBw
-    ? quantizeToPebble2Bit(rgba, s.width, s.height).pixels
+    ? quantizeToPebble2Bit(rgba, s.width, s.height, s.brightness).pixels
     : quantizeToPebble(rgba, s.width, s.height).pixels;
 
   return {

@@ -1,6 +1,6 @@
 build
 node_modules
-.lock-waf_darwin_build
+.lock-waf_*_build
 cmake-build-debug
 .idea
 
