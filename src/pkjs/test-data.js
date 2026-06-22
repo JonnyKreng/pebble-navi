@@ -6,8 +6,8 @@ exports.testAutoMove = testAutoMove;
 var rxjs_1 = require("rxjs");
 var telemetry_1 = require("./telemetry");
 exports.ENABLE_LOGS = (0, telemetry_1.isTelemetryEnabled)();
-exports.DO_TESTING = false;
-exports.DO_MOVEMENT_TESTING = false;
+exports.DO_TESTING = true;
+exports.DO_MOVEMENT_TESTING = true;
 exports.TEST_DESTINATIONS = exports.DO_TESTING
     ? [
         {
@@ -30,16 +30,35 @@ function testOverride(pos) {
     pos.coords.longitude = 13.414912636513549;
     return pos;
 }
-function testAutoMove(location) {
+function testAutoMove(location, getRouteCoords) {
     if (!exports.DO_MOVEMENT_TESTING) {
         return;
     }
+    var routeIndex = 0;
+    var prevCoords;
     (0, rxjs_1.interval)(1000).subscribe(function (nbr) {
-        location.next({
-            coords: {
-                latitude: 52.520976307736106 + 0.00001 * nbr,
-                longitude: 13.414912636513549,
-            },
-        });
+        var coords = getRouteCoords === null || getRouteCoords === void 0 ? void 0 : getRouteCoords();
+        if (coords && coords.length > 0) {
+            if (coords !== prevCoords)
+                routeIndex = 0;
+            prevCoords = coords;
+            routeIndex = Math.min(routeIndex, coords.length - 1);
+            var _a = coords[routeIndex], lng = _a[0], lat = _a[1];
+            location.next({
+                coords: { latitude: lat, longitude: lng },
+            });
+            routeIndex++;
+            if (routeIndex >= coords.length)
+                routeIndex = 0;
+        }
+        else {
+            location.next({
+                coords: {
+                    latitude: 52.520976307736106,
+                    longitude: 13.414912636513549 - 0.0001 * nbr,
+                },
+            });
+            routeIndex = 0;
+        }
     });
 }

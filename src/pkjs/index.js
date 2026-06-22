@@ -17,62 +17,65 @@ var mapHandler;
 // --- Persistent event listeners (registered at module load time, before 'ready') ---
 (0, rxjs_1.fromEvent)(Pebble, 'appmessage')
     .pipe((0, rxjs_1.map)(function (event) { return event.payload; }))
-    .subscribe(function (payload) {
-    try {
-        if (test_data_1.ENABLE_LOGS)
-            console.log('AppMessage received');
-        if (payload.REQUEST_DESTINATIONS !== undefined) {
-            (0, destionations_1.sendDestinationsToWatch)();
-        }
-        if (mapHandler !== undefined) {
-            if (payload.ZOOM_DIR !== undefined) {
-                mapHandler.zoom(payload.ZOOM_DIR);
+    .subscribe({
+    next: function (payload) {
+        try {
+            if (test_data_1.ENABLE_LOGS)
+                console.log('AppMessage received');
+            if (payload.REQUEST_DESTINATIONS !== undefined) {
+                (0, destionations_1.sendDestinationsToWatch)();
             }
-            if (payload.SELECTED_DEST_INDEX !== undefined) {
-                var destination = (0, helper_1.loadDestinations)()[payload.SELECTED_DEST_INDEX];
-                if (destination) {
-                    mapHandler.selectRoute(destination);
+            if (mapHandler !== undefined) {
+                if (payload.ZOOM_DIR !== undefined) {
+                    mapHandler.zoom(payload.ZOOM_DIR);
                 }
-                else {
-                    console.error('Destination not found, index', payload.SELECTED_DEST_INDEX);
-                }
-            }
-            if (payload.ROUTE_MODE !== undefined) {
-                mapHandler.setMode(payload.ROUTE_MODE);
-            }
-            if (payload.ROTATION_MODE !== undefined) {
-                mapHandler.setRotationMode(payload.ROTATION_MODE !== 0);
-            }
-            if (payload.MAX_MESSAGE_SIZE !== undefined) {
-                mapHandler.setChunkSize(payload.MAX_MESSAGE_SIZE);
-            }
-            if (payload.STOP_ROUTING !== undefined) {
-                mapHandler.resetRoute();
-            }
-            if (payload.SAVE_CURRENT_LOCATION !== undefined) {
-                var pos = mapHandler.getCurrentPosition();
-                if (pos) {
-                    var destinations = (0, helper_1.loadDestinations)();
-                    var existing = destinations.find(function (d) { return d.name === 'Saved Location'; });
-                    if (existing) {
-                        existing.lat = pos.lat;
-                        existing.lng = pos.lng;
+                if (payload.SELECTED_DEST_INDEX !== undefined) {
+                    var destination = (0, helper_1.loadDestinations)()[payload.SELECTED_DEST_INDEX];
+                    if (destination) {
+                        mapHandler.selectRoute(destination);
                     }
                     else {
-                        destinations.push({ lat: pos.lat, lng: pos.lng, name: 'Saved Location' });
+                        console.error('Destination not found, index', payload.SELECTED_DEST_INDEX);
                     }
-                    (0, helper_1.saveDestinations)(destinations);
-                    console.log('Saved current location as Saved Location');
                 }
-                else {
-                    console.error('No current position available to save');
+                if (payload.ROUTE_MODE !== undefined) {
+                    mapHandler.setMode(payload.ROUTE_MODE);
+                }
+                if (payload.ROTATION_MODE !== undefined) {
+                    mapHandler.setRotationMode(payload.ROTATION_MODE !== 0);
+                }
+                if (payload.MAX_MESSAGE_SIZE !== undefined) {
+                    mapHandler.setChunkSize(payload.MAX_MESSAGE_SIZE);
+                }
+                if (payload.STOP_ROUTING !== undefined) {
+                    mapHandler.resetRoute();
+                }
+                if (payload.SAVE_CURRENT_LOCATION !== undefined) {
+                    var pos = mapHandler.getCurrentPosition();
+                    if (pos) {
+                        var destinations = (0, helper_1.loadDestinations)();
+                        var existing = destinations.find(function (d) { return d.name === 'Saved Location'; });
+                        if (existing) {
+                            existing.lat = pos.lat;
+                            existing.lng = pos.lng;
+                        }
+                        else {
+                            destinations.push({ lat: pos.lat, lng: pos.lng, name: 'Saved Location' });
+                        }
+                        (0, helper_1.saveDestinations)(destinations);
+                        console.log('Saved current location as Saved Location');
+                    }
+                    else {
+                        console.error('No current position available to save');
+                    }
                 }
             }
         }
-    }
-    catch (e) {
-        console.error(e);
-    }
+        catch (e) {
+            console.error(e);
+        }
+    },
+    error: function (err) { return console.error('AppMessage subscription error:', err); },
 });
 (0, rxjs_1.fromEvent)(Pebble, 'showConfiguration').subscribe(function () {
     console.log('showConfiguration event');
@@ -120,10 +123,13 @@ var mapHandler;
             ROUTE_MODE: mapHandler.getRouteMode(),
             ROTATION_MODE: mapHandler.getRotationMode() ? 1 : 0,
         }, function () { }, function (err) { return console.error('Initial state send failed: ' + err.error); });
-        location.pipe((0, rxjs_1.takeUntil)(destroyApp)).subscribe(function (pos) {
-            if (test_data_1.ENABLE_LOGS)
-                console.log('geolocation event');
-            mapHandler === null || mapHandler === void 0 ? void 0 : mapHandler.updatePosition(pos);
+        location.pipe((0, rxjs_1.takeUntil)(destroyApp)).subscribe({
+            next: function (pos) {
+                if (test_data_1.ENABLE_LOGS)
+                    console.log('geolocation event');
+                mapHandler === null || mapHandler === void 0 ? void 0 : mapHandler.updatePosition(pos);
+            },
+            error: function (err) { return console.error('Location subscription error:', err); },
         });
         navigationWatcher = navigator.geolocation.watchPosition(function (pos) { return location.next((0, test_data_1.testOverride)(pos)); }, console.error, {
             enableHighAccuracy: true,
@@ -135,4 +141,4 @@ var mapHandler;
         console.error(e);
     }
 });
-(0, test_data_1.testAutoMove)(location);
+(0, test_data_1.testAutoMove)(location, function () { return mapHandler === null || mapHandler === void 0 ? void 0 : mapHandler.getRouteCoords(); });

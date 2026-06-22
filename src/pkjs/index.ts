@@ -26,65 +26,68 @@ let mapHandler: MapHandler | undefined;
 
 fromEvent(Pebble, 'appmessage')
   .pipe(map((event) => event.payload as any))
-  .subscribe((payload) => {
-    try {
-      if (ENABLE_LOGS) console.log('AppMessage received');
+  .subscribe({
+    next: (payload) => {
+      try {
+        if (ENABLE_LOGS) console.log('AppMessage received');
 
-      if (payload.REQUEST_DESTINATIONS !== undefined) {
-        sendDestinationsToWatch();
-      }
-
-      if (mapHandler !== undefined) {
-        if (payload.ZOOM_DIR !== undefined) {
-          mapHandler.zoom(payload.ZOOM_DIR);
+        if (payload.REQUEST_DESTINATIONS !== undefined) {
+          sendDestinationsToWatch();
         }
 
-        if (payload.SELECTED_DEST_INDEX !== undefined) {
-          const destination = loadDestinations()[payload.SELECTED_DEST_INDEX];
-          if (destination) {
-            mapHandler.selectRoute(destination);
-          } else {
-            console.error('Destination not found, index', payload.SELECTED_DEST_INDEX);
+        if (mapHandler !== undefined) {
+          if (payload.ZOOM_DIR !== undefined) {
+            mapHandler.zoom(payload.ZOOM_DIR);
           }
-        }
 
-        if (payload.ROUTE_MODE !== undefined) {
-          mapHandler.setMode(payload.ROUTE_MODE);
-        }
-
-        if (payload.ROTATION_MODE !== undefined) {
-          mapHandler.setRotationMode(payload.ROTATION_MODE !== 0);
-        }
-
-        if (payload.MAX_MESSAGE_SIZE !== undefined) {
-          mapHandler.setChunkSize(payload.MAX_MESSAGE_SIZE);
-        }
-
-        if (payload.STOP_ROUTING !== undefined) {
-          mapHandler.resetRoute();
-        }
-
-        if (payload.SAVE_CURRENT_LOCATION !== undefined) {
-          const pos = mapHandler.getCurrentPosition();
-          if (pos) {
-            const destinations = loadDestinations();
-            const existing = destinations.find((d) => d.name === 'Saved Location');
-            if (existing) {
-              existing.lat = pos.lat;
-              existing.lng = pos.lng;
+          if (payload.SELECTED_DEST_INDEX !== undefined) {
+            const destination = loadDestinations()[payload.SELECTED_DEST_INDEX];
+            if (destination) {
+              mapHandler.selectRoute(destination);
             } else {
-              destinations.push({ lat: pos.lat, lng: pos.lng, name: 'Saved Location' });
+              console.error('Destination not found, index', payload.SELECTED_DEST_INDEX);
             }
-            saveDestinations(destinations);
-            console.log('Saved current location as Saved Location');
-          } else {
-            console.error('No current position available to save');
+          }
+
+          if (payload.ROUTE_MODE !== undefined) {
+            mapHandler.setMode(payload.ROUTE_MODE);
+          }
+
+          if (payload.ROTATION_MODE !== undefined) {
+            mapHandler.setRotationMode(payload.ROTATION_MODE !== 0);
+          }
+
+          if (payload.MAX_MESSAGE_SIZE !== undefined) {
+            mapHandler.setChunkSize(payload.MAX_MESSAGE_SIZE);
+          }
+
+          if (payload.STOP_ROUTING !== undefined) {
+            mapHandler.resetRoute();
+          }
+
+          if (payload.SAVE_CURRENT_LOCATION !== undefined) {
+            const pos = mapHandler.getCurrentPosition();
+            if (pos) {
+              const destinations = loadDestinations();
+              const existing = destinations.find((d) => d.name === 'Saved Location');
+              if (existing) {
+                existing.lat = pos.lat;
+                existing.lng = pos.lng;
+              } else {
+                destinations.push({ lat: pos.lat, lng: pos.lng, name: 'Saved Location' });
+              }
+              saveDestinations(destinations);
+              console.log('Saved current location as Saved Location');
+            } else {
+              console.error('No current position available to save');
+            }
           }
         }
+      } catch (e) {
+        console.error(e);
       }
-    } catch (e) {
-      console.error(e);
-    }
+    },
+    error: (err) => console.error('AppMessage subscription error:', err),
   });
 
 fromEvent(Pebble, 'showConfiguration').subscribe(() => {
@@ -151,9 +154,12 @@ fromEvent(Pebble, 'ready')
         (err) => console.error('Initial state send failed: ' + err.error),
       );
 
-      location.pipe(takeUntil(destroyApp)).subscribe((pos: GeolocationPosition) => {
-        if (ENABLE_LOGS) console.log('geolocation event');
-        mapHandler?.updatePosition(pos);
+      location.pipe(takeUntil(destroyApp)).subscribe({
+        next: (pos: GeolocationPosition) => {
+          if (ENABLE_LOGS) console.log('geolocation event');
+          mapHandler?.updatePosition(pos);
+        },
+        error: (err) => console.error('Location subscription error:', err),
       });
 
       navigationWatcher = navigator.geolocation.watchPosition(
@@ -171,4 +177,4 @@ fromEvent(Pebble, 'ready')
     }
   });
 
-testAutoMove(location);
+testAutoMove(location, () => mapHandler?.getRouteCoords());

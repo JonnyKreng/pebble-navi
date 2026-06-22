@@ -128,7 +128,7 @@ var MapHandler = /** @class */ (function () {
             var output = _a.output, state = _a.state;
             _this.lastRenderTime = Date.now();
             _this.lastRenderedState = state;
-            _this.onMapRendered(output);
+            _this.onMapRendered(output, state.currentPos);
         }), (0, rxjs_1.catchError)(function (err) {
             console.error('Map pipeline error:', err);
             _this.rendering = false;
@@ -181,6 +181,10 @@ var MapHandler = /** @class */ (function () {
     MapHandler.prototype.getCurrentPosition = function () {
         return this.mapState.value.currentPos;
     };
+    MapHandler.prototype.getRouteCoords = function () {
+        var _a;
+        return (_a = this.existingRoute) === null || _a === void 0 ? void 0 : _a.coordinates;
+    };
     MapHandler.prototype.resetRoute = function () {
         if (test_data_1.ENABLE_LOGS)
             console.info('resetRoute');
@@ -220,9 +224,9 @@ var MapHandler = /** @class */ (function () {
         this.lastRecalc = now;
         return true;
     };
-    MapHandler.prototype.onMapRendered = function (renderOutput) {
+    MapHandler.prototype.onMapRendered = function (renderOutput, currentPos) {
         this.existingRoute = renderOutput.route;
-        this.sendRouteToWatch(renderOutput);
+        this.sendRouteToWatch(renderOutput, currentPos);
         this.sendBitmapToWatch(renderOutput.pixels);
     };
     MapHandler.prototype.sendBitmapToWatch = function (pixels) {
@@ -232,11 +236,19 @@ var MapHandler = /** @class */ (function () {
         }
         this.sending = true;
         var chunkSize = this.chunk_size;
-        if (test_data_1.ENABLE_LOGS)
-            console.time('compress');
-        var compressed = (0, helper_1.encodeAdaptive)(pixels);
-        if (test_data_1.ENABLE_LOGS)
-            console.timeEnd('compress');
+        var compressed;
+        try {
+            if (test_data_1.ENABLE_LOGS)
+                console.time('compress');
+            compressed = (0, helper_1.encodeAdaptive)(pixels);
+            if (test_data_1.ENABLE_LOGS)
+                console.timeEnd('compress');
+        }
+        catch (e) {
+            console.error('Compression failed:', e);
+            this.sending = false;
+            return;
+        }
         var totalChunks = Math.ceil(compressed.length / chunkSize);
         if (test_data_1.ENABLE_LOGS)
             console.log('sendBitmapToWatch: pixels=' +
@@ -291,7 +303,7 @@ var MapHandler = /** @class */ (function () {
         };
         sendChunk(0);
     };
-    MapHandler.prototype.sendRouteToWatch = function (output) {
+    MapHandler.prototype.sendRouteToWatch = function (output, currentPos) {
         var dict = {};
         var units = (0, helper_1.loadUnits)();
         if (!output.route) {
@@ -306,8 +318,17 @@ var MapHandler = /** @class */ (function () {
             dict.ROUTE_ACTIVE = 0;
         }
         else {
-            var d = output.route.distance;
-            var m = Math.round(output.route.duration / 60);
+            var remainingDist = output.route.distance;
+            var remainingDuration = output.route.duration;
+            if (currentPos) {
+                var progress = (0, routing_1.routeProgress)(output.route.coordinates, currentPos);
+                remainingDist = Math.max(0, output.route.distance - progress.cumDist);
+                remainingDuration = output.route.distance > 0
+                    ? output.route.duration * (remainingDist / output.route.distance)
+                    : output.route.duration;
+            }
+            var d = remainingDist;
+            var m = Math.round(remainingDuration / 60);
             var h = Math.floor(m / 60);
             var mins = m % 60;
             var time = h > 0 ? (mins > 0 ? "".concat(h, " h ").concat(mins, " min") : "".concat(h, " h")) : "".concat(m, " min");

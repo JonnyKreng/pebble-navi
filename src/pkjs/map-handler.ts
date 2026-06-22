@@ -12,7 +12,7 @@ import {
 } from 'rxjs';
 import { MapState, renderForState, RenderOutput } from './server/stateRenderer';
 import { Destination } from './index';
-import { distanceToRoute, RouteResult } from './server/routing';
+import { distanceToRoute, RouteResult, routeProgress } from './server/routing';
 import {
   asciiNormalize,
   encodeAdaptive,
@@ -170,7 +170,7 @@ export class MapHandler {
         tap(({ output, state }) => {
           this.lastRenderTime = Date.now();
           this.lastRenderedState = state;
-          this.onMapRendered(output);
+          this.onMapRendered(output, state.currentPos);
         }),
         catchError((err) => {
           console.error('Map pipeline error:', err);
@@ -246,6 +246,10 @@ export class MapHandler {
     return this.mapState.value.currentPos;
   }
 
+  public getRouteCoords(): [number, number][] | undefined {
+    return this.existingRoute?.coordinates;
+  }
+
   public resetRoute(): void {
     if (ENABLE_LOGS) console.info('resetRoute');
 
@@ -305,10 +309,10 @@ export class MapHandler {
     return true;
   }
 
-  private onMapRendered(renderOutput: RenderOutput): void {
+  private onMapRendered(renderOutput: RenderOutput, currentPos?: { lat: number; lng: number }): void {
     this.existingRoute = renderOutput.route;
 
-    this.sendRouteToWatch(renderOutput);
+    this.sendRouteToWatch(renderOutput, currentPos);
     this.sendBitmapToWatch(renderOutput.pixels);
   }
 
@@ -319,9 +323,16 @@ export class MapHandler {
     this.sending = true;
 
     const chunkSize = this.chunk_size;
-    if (ENABLE_LOGS) console.time('compress');
-    const compressed = encodeAdaptive(pixels);
-    if (ENABLE_LOGS) console.timeEnd('compress');
+    let compressed: Uint8Array;
+    try {
+      if (ENABLE_LOGS) console.time('compress');
+      compressed = encodeAdaptive(pixels);
+      if (ENABLE_LOGS) console.timeEnd('compress');
+    } catch (e) {
+      console.error('Compression failed:', e);
+      this.sending = false;
+      return;
+    }
     const totalChunks = Math.ceil(compressed.length / chunkSize);
     if (ENABLE_LOGS)
       console.log(
@@ -388,7 +399,7 @@ export class MapHandler {
     sendChunk(0);
   }
 
-  private sendRouteToWatch(output: RenderOutput): void {
+  private sendRouteToWatch(output: RenderOutput, currentPos?: { lat: number; lng: number }): void {
     const dict: Record<string, any> = {};
     const units = loadUnits();
 
@@ -402,8 +413,19 @@ export class MapHandler {
       }
       dict.ROUTE_ACTIVE = 0;
     } else {
-      const d = output.route.distance;
-      const m = Math.round(output.route.duration / 60);
+      let remainingDist = output.route.distance;
+      let remainingDuration = output.route.duration;
+
+      if (currentPos) {
+        const progress = routeProgress(output.route.coordinates, currentPos);
+        remainingDist = Math.max(0, output.route.distance - progress.cumDist);
+        remainingDuration = output.route.distance > 0
+          ? output.route.duration * (remainingDist / output.route.distance)
+          : output.route.duration;
+      }
+
+      const d = remainingDist;
+      const m = Math.round(remainingDuration / 60);
       const h = Math.floor(m / 60);
       const mins = m % 60;
       const time = h > 0 ? (mins > 0 ? `${h} h ${mins} min` : `${h} h`) : `${m} min`;

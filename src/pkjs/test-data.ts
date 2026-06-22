@@ -30,17 +30,38 @@ export function testOverride(pos: GeolocationPosition): GeolocationPosition {
   return pos;
 }
 
-export function testAutoMove(location: Subject<GeolocationPosition>) {
+export function testAutoMove(
+  location: Subject<GeolocationPosition>,
+  getRouteCoords?: () => [number, number][] | undefined,
+) {
   if (!DO_MOVEMENT_TESTING) {
     return;
   }
 
+  let routeIndex = 0;
+  let prevCoords: [number, number][] | undefined;
+
   interval(1000).subscribe((nbr) => {
-    location.next(<GeolocationPosition>{
-      coords: {
-        latitude: 52.520976307736106 + 0.00001 * nbr,
-        longitude: 13.414912636513549,
-      },
-    });
+    const coords = getRouteCoords?.();
+
+    if (coords && coords.length > 0) {
+      if (coords !== prevCoords) routeIndex = 0;
+      prevCoords = coords;
+      routeIndex = Math.min(routeIndex, coords.length - 1);
+      const [lng, lat] = coords[routeIndex];
+      location.next(<GeolocationPosition>{
+        coords: { latitude: lat, longitude: lng },
+      });
+      routeIndex++;
+      if (routeIndex >= coords.length) routeIndex = 0;
+    } else {
+      location.next(<GeolocationPosition>{
+        coords: {
+          latitude: 52.520976307736106,
+          longitude: 13.414912636513549 - 0.0001 * nbr,
+        },
+      });
+      routeIndex = 0;
+    }
   });
 }
