@@ -55,7 +55,7 @@
       "watchface": false
     }
   },
-  "version": "1.1.6",
+  "version": "1.1.7",
   "scripts": {
     "pretsc": "node scripts/inline-settings.js && echo \"export const VERSION = '$npm_package_version';\" > src/pkjs/version.ts",
     "tsc": "tsc",
