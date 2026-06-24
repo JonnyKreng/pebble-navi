@@ -109,8 +109,14 @@ export async function renderForState(
     const prog = routeProgress(route.coordinates, s.currentPos);
     if (prog.segIdx >= 0) {
       const ahead = route.coordinates.slice(prog.segIdx + 1);
+      ahead.unshift([s.currentPos.lng, s.currentPos.lat]);
       if (ahead.length >= 2) {
-        renderRoute = { ...route, coordinates: ahead, distance: route.distance - prog.cumDist, duration: route.duration * ((route.distance - prog.cumDist) / route.distance) };
+        renderRoute = {
+          ...route,
+          coordinates: ahead,
+          distance: route.distance - prog.cumDist,
+          duration: route.duration * ((route.distance - prog.cumDist) / route.distance),
+        };
       }
     }
   }

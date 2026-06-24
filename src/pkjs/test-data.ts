@@ -30,6 +30,10 @@ export function testOverride(pos: GeolocationPosition): GeolocationPosition {
   return pos;
 }
 
+function jitter(): number {
+  return (Math.random() - 0.5) * 0.00008;
+}
+
 export function testAutoMove(
   location: Subject<GeolocationPosition>,
   getRouteCoords?: () => [number, number][] | undefined,
@@ -50,15 +54,15 @@ export function testAutoMove(
       routeIndex = Math.min(routeIndex, coords.length - 1);
       const [lng, lat] = coords[routeIndex];
       location.next(<GeolocationPosition>{
-        coords: { latitude: lat, longitude: lng },
+        coords: { latitude: lat + jitter(), longitude: lng + jitter() },
       });
       routeIndex++;
       if (routeIndex >= coords.length) routeIndex = 0;
     } else {
       location.next(<GeolocationPosition>{
         coords: {
-          latitude: 52.520976307736106,
-          longitude: 13.414912636513549 - 0.0001 * nbr,
+          latitude: 52.520976307736106 + jitter(),
+          longitude: 13.414912636513549 - 0.0001 * nbr + jitter(),
         },
       });
       routeIndex = 0;

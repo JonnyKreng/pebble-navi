@@ -30,6 +30,9 @@ function testOverride(pos) {
     pos.coords.longitude = 13.414912636513549;
     return pos;
 }
+function jitter() {
+    return (Math.random() - 0.5) * 0.00008;
+}
 function testAutoMove(location, getRouteCoords) {
     if (!exports.DO_MOVEMENT_TESTING) {
         return;
@@ -45,7 +48,7 @@ function testAutoMove(location, getRouteCoords) {
             routeIndex = Math.min(routeIndex, coords.length - 1);
             var _a = coords[routeIndex], lng = _a[0], lat = _a[1];
             location.next({
-                coords: { latitude: lat, longitude: lng },
+                coords: { latitude: lat + jitter(), longitude: lng + jitter() },
             });
             routeIndex++;
             if (routeIndex >= coords.length)
@@ -54,8 +57,8 @@ function testAutoMove(location, getRouteCoords) {
         else {
             location.next({
                 coords: {
-                    latitude: 52.520976307736106,
-                    longitude: 13.414912636513549 - 0.0001 * nbr,
+                    latitude: 52.520976307736106 + jitter(),
+                    longitude: 13.414912636513549 - 0.0001 * nbr + jitter(),
                 },
             });
             routeIndex = 0;

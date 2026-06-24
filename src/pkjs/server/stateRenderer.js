@@ -138,6 +138,7 @@ function renderForState(s_1, existingRoute_1) {
                         prog = (0, routing_js_1.routeProgress)(route.coordinates, s.currentPos);
                         if (prog.segIdx >= 0) {
                             ahead = route.coordinates.slice(prog.segIdx + 1);
+                            ahead.unshift([s.currentPos.lng, s.currentPos.lat]);
                             if (ahead.length >= 2) {
                                 renderRoute = __assign(__assign({}, route), { coordinates: ahead, distance: route.distance - prog.cumDist, duration: route.duration * ((route.distance - prog.cumDist) / route.distance) });
                             }
