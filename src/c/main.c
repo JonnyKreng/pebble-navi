@@ -94,6 +94,12 @@ static void inbox_received(DictionaryIterator* iter, void* ctx)
         menu_set_has_route(route_active->value->int32 != 0);
     }
 
+    Tuple* show_dictation = dict_find(iter, MESSAGE_KEY_SHOW_DICTATION);
+    if (show_dictation)
+    {
+        menu_set_show_dictation(show_dictation->value->int32 != 0);
+    }
+
     if (nav_line1 || nav_line2)
     {
         layer_mark_dirty(s_map_layer);

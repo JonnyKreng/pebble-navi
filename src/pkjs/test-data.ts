@@ -14,8 +14,8 @@ export const TEST_DESTINATIONS = DO_TESTING
       },
       {
         name: 'Alexanderplatz',
-        lat: 52.520976307736106,
-        lng: 13.414912636513549,
+        lat: 52.520976407736106,
+        lng: 13.414212636513549,
       },
     ]
   : [];

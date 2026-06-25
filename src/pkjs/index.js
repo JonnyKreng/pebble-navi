@@ -5,6 +5,7 @@ var settings_1 = require("./settings");
 var helper_1 = require("./helper");
 var rxjs_1 = require("rxjs");
 var destionations_1 = require("./destionations");
+var dictation_1 = require("./dictation");
 var map_handler_1 = require("./map-handler");
 var test_data_1 = require("./test-data");
 var telemetry_1 = require("./telemetry");
@@ -49,6 +50,16 @@ var mapHandler;
                 }
                 if (payload.STOP_ROUTING !== undefined) {
                     mapHandler.resetRoute();
+                }
+                if (payload.DICTATE_TEXT !== undefined) {
+                    (0, dictation_1.dictateSearch)(payload.DICTATE_TEXT, mapHandler);
+                }
+                if (payload.DICTATE_SELECT_INDEX !== undefined) {
+                    var idx = payload.DICTATE_SELECT_INDEX;
+                    var result = dictation_1.dictationResults[idx];
+                    if (result) {
+                        mapHandler.selectRoute({ lat: result.lat, lng: result.lng, name: result.name });
+                    }
                 }
                 if (payload.SAVE_CURRENT_LOCATION !== undefined) {
                     var pos = mapHandler.getCurrentPosition();
@@ -97,6 +108,7 @@ var mapHandler;
         if (e.response) {
             (0, settings_1.saveSettings)(e.response);
             mapHandler === null || mapHandler === void 0 ? void 0 : mapHandler.onSettingsChanged();
+            Pebble.sendAppMessage({ SHOW_DICTATION: (0, helper_1.loadShowDictation)() ? 1 : 0 }, function () { }, function (err) { return console.error('SHOW_DICTATION send failed: ' + err.error); });
         }
         (0, telemetry_1.flushTelemetry)();
     }
@@ -122,6 +134,7 @@ var mapHandler;
         Pebble.sendAppMessage({
             ROUTE_MODE: mapHandler.getRouteMode(),
             ROTATION_MODE: mapHandler.getRotationMode() ? 1 : 0,
+            SHOW_DICTATION: (0, helper_1.loadShowDictation)() ? 1 : 0,
         }, function () { }, function (err) { return console.error('Initial state send failed: ' + err.error); });
         location.pipe((0, rxjs_1.takeUntil)(destroyApp)).subscribe({
             next: function (pos) {

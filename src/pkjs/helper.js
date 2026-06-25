@@ -12,6 +12,8 @@ exports.loadBrightness = loadBrightness;
 exports.saveBrightness = saveBrightness;
 exports.loadShowDestinationHint = loadShowDestinationHint;
 exports.saveShowDestinationHint = saveShowDestinationHint;
+exports.loadShowDictation = loadShowDictation;
+exports.saveShowDictation = saveShowDictation;
 exports.loadMinimumUpdateTime = loadMinimumUpdateTime;
 exports.saveMinimumUpdateTime = saveMinimumUpdateTime;
 exports.loadDestinations = loadDestinations;
@@ -28,6 +30,7 @@ var TELEMETRY_KEY = 'telemetry_enabled';
 var EXPERIMENTAL_KEY = 'experimental_enabled';
 var BRIGHTNESS_KEY = 'brightness_value';
 var SHOW_DESTINATION_HINT_KEY = 'show_destination_hint';
+var SHOW_DICTATION_KEY = 'show_dictation';
 var MINIMUM_UPDATE_TIME_KEY = 'minimum_update_time';
 function loadSettings() {
     try {
@@ -79,6 +82,13 @@ function loadShowDestinationHint() {
 }
 function saveShowDestinationHint(enabled) {
     localStorage.setItem(SHOW_DESTINATION_HINT_KEY, enabled ? 'true' : 'false');
+}
+function loadShowDictation() {
+    var saved = localStorage.getItem(SHOW_DICTATION_KEY);
+    return saved !== 'false';
+}
+function saveShowDictation(enabled) {
+    localStorage.setItem(SHOW_DICTATION_KEY, enabled ? 'true' : 'false');
 }
 function loadMinimumUpdateTime() {
     var saved = localStorage.getItem(MINIMUM_UPDATE_TIME_KEY);

@@ -1,8 +1,9 @@
 import './server/polyfills';
 import { buildSettings, saveSettings } from './settings';
-import { loadDestinations, saveDestinations } from './helper';
+import { loadDestinations, loadShowDictation, saveDestinations } from './helper';
 import { fromEvent, map, Subject, takeUntil, tap } from 'rxjs';
 import { sendDestinationsToWatch } from './destionations';
+import { dictateSearch, dictationResults } from './dictation';
 import { MapHandler } from './map-handler';
 import { DO_MOVEMENT_TESTING, ENABLE_LOGS, testAutoMove, testOverride } from './test-data';
 import { initTelemetry, flushTelemetry, setWatchInfo } from './telemetry';
@@ -65,6 +66,18 @@ fromEvent(Pebble, 'appmessage')
             mapHandler.resetRoute();
           }
 
+          if (payload.DICTATE_TEXT !== undefined) {
+            dictateSearch(payload.DICTATE_TEXT, mapHandler);
+          }
+
+          if (payload.DICTATE_SELECT_INDEX !== undefined) {
+            const idx = payload.DICTATE_SELECT_INDEX as number;
+            const result = dictationResults[idx];
+            if (result) {
+              mapHandler.selectRoute({ lat: result.lat, lng: result.lng, name: result.name });
+            }
+          }
+
           if (payload.SAVE_CURRENT_LOCATION !== undefined) {
             const pos = mapHandler.getCurrentPosition();
             if (pos) {
@@ -116,6 +129,11 @@ fromEvent(Pebble, 'webviewclosed').subscribe((e) => {
     if (e.response) {
       saveSettings(e.response);
       mapHandler?.onSettingsChanged();
+      Pebble.sendAppMessage(
+        { SHOW_DICTATION: loadShowDictation() ? 1 : 0 },
+        () => {},
+        (err) => console.error('SHOW_DICTATION send failed: ' + err.error),
+      );
     }
     flushTelemetry();
   } catch (e) {
@@ -147,6 +165,7 @@ fromEvent(Pebble, 'ready')
         {
           ROUTE_MODE: mapHandler.getRouteMode(),
           ROTATION_MODE: mapHandler.getRotationMode() ? 1 : 0,
+          SHOW_DICTATION: loadShowDictation() ? 1 : 0,
         },
         () => {},
         (err) => console.error('Initial state send failed: ' + err.error),

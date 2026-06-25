@@ -28,7 +28,14 @@
       "ROUTE_ACTIVE",
       "ROUTE_MODE",
       "ROTATION_MODE",
-      "MAX_MESSAGE_SIZE"
+      "MAX_MESSAGE_SIZE",
+      "DICTATE_TEXT",
+      "DICTATE_RESULTS_TOTAL",
+      "DICTATE_RESULT_INDEX",
+      "DICTATE_RESULT_NAME",
+      "DICTATE_RESULT_DISTANCE",
+      "DICTATE_SELECT_INDEX",
+      "SHOW_DICTATION"
     ],
     "projectType": "native",
     "resources": {

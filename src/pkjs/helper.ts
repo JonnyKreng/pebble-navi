@@ -8,6 +8,7 @@ const TELEMETRY_KEY = 'telemetry_enabled';
 const EXPERIMENTAL_KEY = 'experimental_enabled';
 const BRIGHTNESS_KEY = 'brightness_value';
 const SHOW_DESTINATION_HINT_KEY = 'show_destination_hint';
+const SHOW_DICTATION_KEY = 'show_dictation';
 const MINIMUM_UPDATE_TIME_KEY = 'minimum_update_time';
 
 export interface NavSettings {
@@ -76,6 +77,15 @@ export function loadShowDestinationHint(): boolean {
 
 export function saveShowDestinationHint(enabled: boolean): void {
   localStorage.setItem(SHOW_DESTINATION_HINT_KEY, enabled ? 'true' : 'false');
+}
+
+export function loadShowDictation(): boolean {
+  const saved = localStorage.getItem(SHOW_DICTATION_KEY);
+  return saved !== 'false';
+}
+
+export function saveShowDictation(enabled: boolean): void {
+  localStorage.setItem(SHOW_DICTATION_KEY, enabled ? 'true' : 'false');
 }
 
 export function loadMinimumUpdateTime(): number {

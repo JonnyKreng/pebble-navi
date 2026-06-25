@@ -11,6 +11,7 @@ function buildSettings(userLat, userLng) {
     var experimental = (0, helper_1.loadExperimentalEnabled)();
     var brightness = (0, helper_1.loadBrightness)();
     var showDestHint = (0, helper_1.loadShowDestinationHint)();
+    var showDictation = (0, helper_1.loadShowDictation)();
     var minUpdateTime = (0, helper_1.loadMinimumUpdateTime)();
     var html = settings_template_1.SETTINGS_HTML;
     html = html.replace('__DESTINATIONS__', JSON.stringify(destinations));
@@ -20,6 +21,7 @@ function buildSettings(userLat, userLng) {
     html = html.replace('__EXPERIMENTAL_CHECKED__', experimental ? ' checked' : '');
     html = html.replace(/__BRIGHTNESS_VALUE__/g, String(brightness));
     html = html.replace('__SHOW_DEST_HINT_CHECKED__', showDestHint ? ' checked' : '');
+    html = html.replace('__SHOW_DICTATION_CHECKED__', showDictation ? ' checked' : '');
     html = html.replace(/__MIN_UPDATE_TIME__/g, String(minUpdateTime));
     html = html.replace('__ROUTING_MODE__', (0, helper_1.loadSettings)().mode);
     html = html.replace('__USER_LAT__', userLat !== undefined ? String(userLat) : 'undefined');
@@ -47,6 +49,9 @@ function saveSettings(response) {
         }
         if (data.show_destination_hint !== undefined) {
             (0, helper_1.saveShowDestinationHint)(data.show_destination_hint);
+        }
+        if (data.show_dictation !== undefined) {
+            (0, helper_1.saveShowDictation)(data.show_dictation);
         }
         if (data.minimum_update_time !== undefined) {
             (0, helper_1.saveMinimumUpdateTime)(data.minimum_update_time);

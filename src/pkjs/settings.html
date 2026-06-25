@@ -353,6 +353,21 @@
         />
         <span id="brightness-val" style="min-width: 32px; text-align: right; font-weight: bold; color: #4fc3f7;">__BRIGHTNESS_VALUE__</span>
       </div>
+      <div class="section-title">Show dictation</div>
+      <label
+        style="
+          display: flex;
+          align-items: center;
+          gap: 8px;
+          padding: 8px;
+          background: #0f3460;
+          border-radius: 6px;
+          cursor: pointer;
+          margin: 8px 0;
+        "
+      >
+        <input type="checkbox" id="show-dictation" __SHOW_DICTATION_CHECKED__ /> Show "Dictate" option in destination list (needs restart)
+      </label>
       <div class="section-title">Show destination hint</div>
       <label
         style="
@@ -504,6 +519,7 @@
           var e = document.getElementById("experimental").checked;
           var b = parseInt(document.getElementById("brightness").value, 10);
           var sdh = document.getElementById("show-dest-hint").checked;
+          var sd = document.getElementById("show-dictation").checked;
           var mut = parseInt(document.getElementById("min-update-time").value, 10);
           var payload = {
               destinations: dests,
@@ -512,6 +528,7 @@
               experimental_enabled: e,
               brightness: isNaN(b) ? 40 : b,
               show_destination_hint: sdh,
+              show_dictation: sd,
               minimum_update_time: isNaN(mut) ? 0 : mut
           };
           document.location = "pebblejs://close#" + encodeURIComponent(JSON.stringify(payload))

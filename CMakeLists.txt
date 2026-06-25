@@ -54,7 +54,9 @@ include_directories(
 # Source files
 set(SOURCES
     src/c/main.c
+    src/c/menu.c
     src/c/navigation.c
+    src/c/dictation.c
 )
 
 add_executable(pebble-navi ${SOURCES})

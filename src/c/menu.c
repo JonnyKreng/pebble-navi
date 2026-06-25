@@ -1,5 +1,6 @@
 #include <pebble.h>
 #include "menu.h"
+#include "dictation.h"
 
 #define MAX_DEST_NAMES 30
 #define MAX_NAME_LEN 32
@@ -23,6 +24,7 @@ static int s_dest_names_total;
 static int s_dest_names_received;
 static bool s_collecting_dests;
 static int s_dest_scroll_offset;
+static bool s_show_dictation;
 
 static void update_backlight_label(void)
 {
@@ -90,6 +92,17 @@ static void menu_layer_update_proc(Layer* layer, GContext* ctx)
         return;
     }
 
+    if (s_mode == MODE_DICTATE_WAITING)
+    {
+        graphics_context_set_text_color(ctx, GColorWhite);
+        GRect r = GRect(0, (bounds.size.h - 24) / 2, bounds.size.w, 24);
+        graphics_draw_text(ctx, dictation_get_status_text(),
+                           fonts_get_system_font(FONT_KEY_GOTHIC_24_BOLD),
+                           r, GTextOverflowModeTrailingEllipsis,
+                           GTextAlignmentCenter, NULL);
+        return;
+    }
+
     if (s_mode == MODE_MAIN_MENU)
     {
         int num_visible = s_has_route ? 7 : 6;
@@ -141,6 +154,9 @@ static void menu_layer_update_proc(Layer* layer, GContext* ctx)
     else if (s_mode == MODE_DEST_LIST)
     {
         int max_visible = bounds.size.h / ITEM_HEIGHT;
+        bool show_dictate = s_show_dictation;
+        int dict_offset = show_dictate ? 1 : 0;
+        int total_items = s_dest_names_total + dict_offset;
         if (s_selected_index < s_dest_scroll_offset)
         {
             s_dest_scroll_offset = s_selected_index;
@@ -151,7 +167,52 @@ static void menu_layer_update_proc(Layer* layer, GContext* ctx)
         }
 
         int drawn = 0;
-        for (int i = s_dest_scroll_offset; i < s_dest_names_total && drawn < max_visible; i++, drawn++)
+        for (int slot = s_dest_scroll_offset; slot < total_items && drawn < max_visible; slot++, drawn++)
+        {
+            GRect item_rect = GRect(0, drawn * ITEM_HEIGHT, bounds.size.w, ITEM_HEIGHT);
+
+            if (slot == s_selected_index)
+            {
+                graphics_context_set_fill_color(ctx, GColorWhite);
+                graphics_fill_rect(ctx, item_rect, 0, GCornerNone);
+                graphics_context_set_text_color(ctx, GColorBlack);
+            }
+            else
+            {
+                graphics_context_set_text_color(ctx, GColorWhite);
+            }
+
+            if (show_dictate && slot == 0)
+            {
+                graphics_draw_text(ctx, "> Dictate",
+                                   fonts_get_system_font(FONT_KEY_GOTHIC_24_BOLD),
+                                   item_rect, GTextOverflowModeTrailingEllipsis,
+                                   GTextAlignmentCenter, NULL);
+            }
+            else
+            {
+                graphics_draw_text(ctx, s_dest_names[slot - dict_offset],
+                                   fonts_get_system_font(FONT_KEY_GOTHIC_24_BOLD),
+                                   item_rect, GTextOverflowModeTrailingEllipsis,
+                                   GTextAlignmentCenter, NULL);
+            }
+        }
+    }
+    else if (s_mode == MODE_DICTATE_LIST)
+    {
+        int max_visible = bounds.size.h / ITEM_HEIGHT;
+        if (s_selected_index < s_dest_scroll_offset)
+        {
+            s_dest_scroll_offset = s_selected_index;
+        }
+        else if (s_selected_index >= s_dest_scroll_offset + max_visible)
+        {
+            s_dest_scroll_offset = s_selected_index - max_visible + 1;
+        }
+
+        int total = dictation_get_total();
+        int drawn = 0;
+        for (int i = s_dest_scroll_offset; i < total && drawn < max_visible; i++, drawn++)
         {
             GRect item_rect = GRect(0, drawn * ITEM_HEIGHT, bounds.size.w, ITEM_HEIGHT);
 
@@ -166,12 +227,40 @@ static void menu_layer_update_proc(Layer* layer, GContext* ctx)
                 graphics_context_set_text_color(ctx, GColorWhite);
             }
 
-            graphics_draw_text(ctx, s_dest_names[i],
+            char line[100];
+            snprintf(line, sizeof(line), "%s (%s)",
+                     dictation_get_name(i), dictation_get_dist(i));
+
+            graphics_draw_text(ctx, line,
                                fonts_get_system_font(FONT_KEY_GOTHIC_24_BOLD),
                                item_rect, GTextOverflowModeTrailingEllipsis,
                                GTextAlignmentCenter, NULL);
         }
     }
+}
+
+static void dictation_event_cb(DictationEvent event, const char* status_text)
+{
+    switch (event)
+    {
+        case DictationEventListening:
+            s_mode = MODE_DICTATE_WAITING;
+            break;
+        case DictationEventSearching:
+            s_mode = MODE_DICTATE_WAITING;
+            break;
+        case DictationEventResultsReady:
+            s_mode = MODE_DICTATE_LIST;
+            s_selected_index = 0;
+            s_dest_scroll_offset = 0;
+            break;
+        case DictationEventFailed:
+        case DictationEventCancelled:
+            s_mode = MODE_DEST_LIST;
+            s_selected_index = 0;
+            break;
+    }
+    layer_mark_dirty(s_menu_layer);
 }
 
 void menu_init(Layer* parent_layer, MenuSendCallback send_cb)
@@ -190,6 +279,9 @@ void menu_init(Layer* parent_layer, MenuSendCallback send_cb)
     s_dest_names_total = 0;
     s_dest_names_received = 0;
     s_dest_scroll_offset = 0;
+    s_show_dictation = true;
+
+    dictation_init(dictation_event_cb);
 
     s_menu_layer = layer_create(layer_get_bounds(parent_layer));
     layer_set_update_proc(s_menu_layer, menu_layer_update_proc);
@@ -200,6 +292,7 @@ void menu_init(Layer* parent_layer, MenuSendCallback send_cb)
 void menu_destroy(void)
 {
     light_enable(false);
+    dictation_destroy();
     if (s_menu_layer)
     {
         layer_destroy(s_menu_layer);
@@ -250,11 +343,17 @@ void menu_set_rotation_mode(bool enabled)
     }
 }
 
+void menu_set_show_dictation(bool show)
+{
+    s_show_dictation = show;
+}
+
 void menu_hide(void)
 {
     s_mode = MODE_MAP;
     s_selected_index = 0;
     s_collecting_dests = false;
+    dictation_destroy();
     layer_set_hidden(s_menu_layer, true);
 }
 
@@ -290,6 +389,14 @@ bool menu_handle_down(void)
     if (s_mode == MODE_MAIN_MENU)
     {
         max_index = s_has_route ? 6 : 5;
+    }
+    else if (s_mode == MODE_DEST_LIST)
+    {
+        max_index = s_dest_names_total + (s_show_dictation ? 0 : -1);
+    }
+    else if (s_mode == MODE_DICTATE_LIST)
+    {
+        max_index = dictation_get_total() - 1;
     }
     else
     {
@@ -361,7 +468,23 @@ bool menu_handle_select(void)
     }
     else if (s_mode == MODE_DEST_LIST)
     {
-        if (s_send_cb) s_send_cb(MESSAGE_KEY_SELECTED_DEST_INDEX, s_selected_index);
+        if (s_show_dictation && s_selected_index == 0)
+        {
+            if (!dictation_start())
+            {
+                layer_mark_dirty(s_menu_layer);
+            }
+        }
+        else
+        {
+            int dest_idx = s_selected_index - (s_show_dictation ? 1 : 0);
+            if (s_send_cb) s_send_cb(MESSAGE_KEY_SELECTED_DEST_INDEX, dest_idx);
+            menu_hide();
+        }
+    }
+    else if (s_mode == MODE_DICTATE_LIST)
+    {
+        if (s_send_cb) s_send_cb(MESSAGE_KEY_DICTATE_SELECT_INDEX, s_selected_index);
         menu_hide();
     }
 
@@ -379,6 +502,13 @@ bool menu_handle_back(void)
         s_collecting_dests = false;
         layer_mark_dirty(s_menu_layer);
     }
+    else if (s_mode == MODE_DICTATE_LIST || s_mode == MODE_DICTATE_WAITING)
+    {
+        dictation_cancel();
+        s_mode = MODE_DEST_LIST;
+        s_selected_index = 0;
+        layer_mark_dirty(s_menu_layer);
+    }
     else
     {
         menu_hide();
@@ -394,6 +524,14 @@ bool menu_handle_message(DictionaryIterator* iter)
     {
         reset_dest_collection();
         s_dest_names_total = total_t->value->uint8;
+        if (s_dest_names_total == 0)
+        {
+            s_collecting_dests = false;
+            s_mode = MODE_DEST_LIST;
+            s_selected_index = 0;
+            s_dest_scroll_offset = 0;
+            layer_mark_dirty(s_menu_layer);
+        }
         return true;
     }
 
@@ -421,6 +559,8 @@ bool menu_handle_message(DictionaryIterator* iter)
             return true;
         }
     }
+
+    if (dictation_handle_message(iter)) return true;
 
     return false;
 }
