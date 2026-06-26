@@ -130,6 +130,8 @@ run_platform() {
 
     # -------- Screenshot 4: Map with route --------
     info "  Step 4/5: Choosing first destination (Brandenburger Tor)"
+    press "$platform" down
+    sleep 0.5
     press "$platform" select
     info "  Waiting 4s for OSRM routing + map render..."
     sleep 4
