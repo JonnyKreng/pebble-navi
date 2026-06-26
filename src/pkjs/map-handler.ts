@@ -119,7 +119,12 @@ export class MapHandler {
 
             if (!isManualAction) {
               if (now - this.lastRenderTime < minUpdateTimeMs) {
-                if (ENABLE_LOGS) console.log('Throttling location update: ' + (now - this.lastRenderTime) + 'ms since last render');
+                if (ENABLE_LOGS)
+                  console.log(
+                    'Throttling location update: ' +
+                      (now - this.lastRenderTime) +
+                      'ms since last render',
+                  );
                 return false;
               }
             }
@@ -158,7 +163,12 @@ export class MapHandler {
           }
           const stateWithBrightness = { ...state, brightness: loadBrightness() };
           return from(
-            renderForState(stateWithBrightness, this.existingRoute, this.isBw, this.userVerticalOffset),
+            renderForState(
+              stateWithBrightness,
+              this.existingRoute,
+              this.isBw,
+              this.userVerticalOffset,
+            ),
           ).pipe(
             tap(() => {
               if (ENABLE_LOGS) console.timeEnd('renderForState');
@@ -309,7 +319,10 @@ export class MapHandler {
     return true;
   }
 
-  private onMapRendered(renderOutput: RenderOutput, currentPos?: { lat: number; lng: number }): void {
+  private onMapRendered(
+    renderOutput: RenderOutput,
+    currentPos?: { lat: number; lng: number },
+  ): void {
     this.existingRoute = renderOutput.route;
 
     this.sendRouteToWatch(renderOutput, currentPos);
@@ -419,9 +432,10 @@ export class MapHandler {
       if (currentPos) {
         const progress = routeProgress(output.route.coordinates, currentPos);
         remainingDist = Math.max(0, output.route.distance - progress.cumDist);
-        remainingDuration = output.route.distance > 0
-          ? output.route.duration * (remainingDist / output.route.distance)
-          : output.route.duration;
+        remainingDuration =
+          output.route.distance > 0
+            ? output.route.duration * (remainingDist / output.route.distance)
+            : output.route.duration;
       }
 
       const d = remainingDist;

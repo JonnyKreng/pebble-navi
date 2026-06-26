@@ -3,17 +3,31 @@
   <head>
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <style>
+      :root {
+        --bg-page: #1e1e1e;
+        --bg-card: #333;
+        --bg-input: #2a2a2a;
+        --text-primary: #f0f0f0;
+        --text-muted: #888;
+        --text-empty: #666;
+        --text-strong: #aaa;
+        --accent: #FA4A36;
+        --danger: #e74c3c;
+        --border: #555;
+        --white: #fff;
+      }
+
       body {
         font-family: sans-serif;
         padding: 16px;
-        background: #1a1a2e;
-        color: #eee;
+        background: var(--bg-page);
+        color: var(--text-primary);
         max-width: 400px;
         margin: 0 auto;
       }
 
       h1 {
-        color: #4fc3f7;
+        color: var(--accent);
         font-size: 20px;
         margin: 0 0 16px;
       }
@@ -21,7 +35,7 @@
       .dest {
         padding: 8px;
         margin: 4px 0;
-        background: #16213e;
+        background: var(--bg-card);
         border-radius: 6px;
         display: flex;
         gap: 8px;
@@ -35,9 +49,9 @@
       }
 
       .del-btn {
-        background: #e74c3c;
+        background: var(--danger);
         border: none;
-        color: #fff;
+        color: var(--white);
         border-radius: 4px;
         padding: 4px 10px;
         cursor: pointer;
@@ -49,9 +63,9 @@
       }
 
       .prev-btn {
-        background: #4fc3f7;
+        background: var(--accent);
         border: none;
-        color: #1a1a2e;
+        color: var(--white);
         border-radius: 4px;
         padding: 4px 10px;
         cursor: pointer;
@@ -69,11 +83,22 @@
         width: 100%;
         padding: 8px;
         margin: 8px 0;
-        border: 1px solid #333;
+        border: 1px solid var(--border);
         border-radius: 4px;
-        background: #0f3460;
-        color: #eee;
+        background: var(--bg-input);
+        color: var(--text-primary);
         box-sizing: border-box;
+      }
+
+      input[type="checkbox"],
+      input[type="radio"] {
+        width: auto;
+        margin: 0;
+        padding: 0;
+        border: none;
+        background: none;
+        accent-color: var(--accent);
+        flex-shrink: 0;
       }
 
       input[type="range"] {
@@ -82,7 +107,7 @@
         width: 100%;
         height: 8px;
         border-radius: 4px;
-        background: #16213e;
+        background: var(--bg-card);
         outline: none;
         padding: 0;
         margin: 8px 0;
@@ -95,7 +120,7 @@
         width: 18px;
         height: 18px;
         border-radius: 50%;
-        background: #4fc3f7;
+        background: var(--accent);
         cursor: pointer;
       }
 
@@ -103,14 +128,14 @@
         width: 18px;
         height: 18px;
         border-radius: 50%;
-        background: #4fc3f7;
+        background: var(--accent);
         cursor: pointer;
         border: none;
       }
 
       button {
-        background: #4fc3f7;
-        color: #1a1a2e;
+        background: var(--accent);
+        color: var(--white);
         border: none;
         padding: 10px 20px;
         border-radius: 6px;
@@ -120,7 +145,7 @@
       }
 
       .empty {
-        color: #666;
+        color: var(--text-empty);
         text-align: center;
         padding: 20px;
       }
@@ -130,8 +155,8 @@
         top: 100%;
         left: 0;
         right: 0;
-        background: #16213e;
-        border: 1px solid #333;
+        background: var(--bg-card);
+        border: 1px solid var(--border);
         border-radius: 0 0 4px 4px;
         max-height: 200px;
         overflow-y: auto;
@@ -152,37 +177,37 @@
         padding: 8px;
         cursor: pointer;
         font-size: 13px;
-        border-bottom: 1px solid #333;
+        border-bottom: 1px solid var(--border);
       }
 
       .suggestions li:hover {
-        background: #0f3460;
+        background: var(--bg-input);
       }
 
       .section-title {
-        color: #4fc3f7;
-        font-size: 14px;
+        color: var(--accent);
+        font-size: 20px;
         margin: 16px 0 8px;
       }
 
       .notice {
         font-size: 11px;
-        color: #888;
+        color: var(--text-muted);
         padding: 16px 0 0;
         line-height: 1.5;
       }
 
       .notice a {
-        color: #4fc3f7;
+        color: var(--accent);
       }
 
       .notice strong {
-        color: #aaa;
+        color: var(--text-strong);
       }
 
       .accordion-toggle {
-        background: #0f3460;
-        color: #4fc3f7;
+        background: var(--bg-input);
+        color: var(--accent);
         border: none;
         border-radius: 6px;
         padding: 10px 12px;
@@ -203,6 +228,11 @@
         transition: transform 0.2s;
       }
 
+      .accordion-toggle.open {
+        border-radius: 6px 6px 0 0;
+        margin-bottom: 0;
+      }
+
       .accordion-toggle.open::after {
         transform: rotate(180deg);
       }
@@ -214,8 +244,15 @@
 
       .accordion-content.open {
         display: block;
+        background: var(--bg-card);
+        border-radius: 0 0 6px 6px;
+        padding: 8px;
+        margin-bottom: 8px;
       }
     </style>
+    <title>
+      Navigation on your Wrist
+    </title>
   </head>
   <body>
     <h1>Saved Destinations</h1>
@@ -247,7 +284,7 @@
             position: absolute;
             top: -14px;
             right: -14px;
-            background: #e74c3c;
+            background: #FA4A36;
             color: #fff;
             border: none;
             border-radius: 50%;
@@ -262,7 +299,7 @@
           "
           >&times;</span
         >
-        <canvas id="preview" style="width: 100%; border-radius: 6px; background: #0f3460"></canvas>
+        <canvas id="preview" style="width: 100%; border-radius: 6px; background: #2a2a2a"></canvas>
       </div>
     </div>
     <div class="section-title">Add Destination</div>
@@ -271,7 +308,7 @@
       <input type="text" id="addr" placeholder="Type address or lat,lng" autocomplete="off" />
       <ul id="suggestions" class="suggestions"></ul>
     </div>
-    <button onclick="addDest()" style="background: #2ecc71; color: #fff">Add Destination</button>
+    <button onclick="addDest()" style="background: #FA4A36; color: #fff">Add Destination</button>
     <button onclick="saveCurrentPos()" style="margin-top: 8px">Save Current Position</button>
     <button class="accordion-toggle" onclick="toggleAdvanced()" id="advanced-toggle">Advanced Options</button>
     <div class="accordion-content" id="advanced-content">
@@ -282,7 +319,7 @@
             flex: 1;
             text-align: center;
             padding: 8px;
-            background: #0f3460;
+            background: #2a2a2a;
             border-radius: 6px;
             cursor: pointer;
           "
@@ -294,7 +331,7 @@
             flex: 1;
             text-align: center;
             padding: 8px;
-            background: #0f3460;
+            background: #2a2a2a;
             border-radius: 6px;
             cursor: pointer;
           "
@@ -309,7 +346,7 @@
           align-items: center;
           gap: 8px;
           padding: 8px;
-          background: #0f3460;
+          background: #2a2a2a;
           border-radius: 6px;
           cursor: pointer;
           margin: 8px 0;
@@ -326,7 +363,7 @@
           align-items: center;
           gap: 8px;
           padding: 8px;
-          background: #0f3460;
+          background: #2a2a2a;
           border-radius: 6px;
           cursor: pointer;
           margin: 8px 0;
@@ -342,7 +379,7 @@
         </div>
       </label>
       <div class="section-title">For Black and White models: Brightness (0-100)</div>
-      <div style="display: flex; align-items: center; gap: 12px; margin: 8px 0; padding: 8px; background: #0f3460; border-radius: 6px; box-sizing: border-box;">
+      <div style="display: flex; align-items: center; gap: 12px; margin: 8px 0; padding: 8px; background: #2a2a2a; border-radius: 6px; box-sizing: border-box;">
         <input
           type="range"
           id="brightness"
@@ -351,7 +388,7 @@
           value="__BRIGHTNESS_VALUE__"
           oninput="document.getElementById('brightness-val').innerText = this.value"
         />
-        <span id="brightness-val" style="min-width: 32px; text-align: right; font-weight: bold; color: #4fc3f7;">__BRIGHTNESS_VALUE__</span>
+        <span id="brightness-val" style="min-width: 32px; text-align: right; font-weight: bold; color: #FA4A36;">__BRIGHTNESS_VALUE__</span>
       </div>
       <div class="section-title">Show dictation</div>
       <label
@@ -360,13 +397,13 @@
           align-items: center;
           gap: 8px;
           padding: 8px;
-          background: #0f3460;
+          background: #2a2a2a;
           border-radius: 6px;
           cursor: pointer;
           margin: 8px 0;
         "
       >
-        <input type="checkbox" id="show-dictation" __SHOW_DICTATION_CHECKED__ /> Show "Dictate" option in destination list (needs restart)
+        <input type="checkbox" id="show-dictation" __SHOW_DICTATION_CHECKED__ /> Show "Dictate" option in destination list
       </label>
       <div class="section-title">Show destination hint</div>
       <label
@@ -375,7 +412,7 @@
           align-items: center;
           gap: 8px;
           padding: 8px;
-          background: #0f3460;
+          background: #2a2a2a;
           border-radius: 6px;
           cursor: pointer;
           margin: 8px 0;
@@ -384,7 +421,7 @@
         <input type="checkbox" id="show-dest-hint" __SHOW_DEST_HINT_CHECKED__ /> Show "Select Destination" / "Add Destination" hints when no route is active
       </label>
       <div class="section-title">Minimum update time (0-300s)</div>
-      <div style="display: flex; align-items: center; gap: 12px; margin: 8px 0; padding: 8px; background: #0f3460; border-radius: 6px; box-sizing: border-box;">
+      <div style="display: flex; align-items: center; gap: 12px; margin: 8px 0; padding: 8px; background: #2a2a2a; border-radius: 6px; box-sizing: border-box;">
         <input
           type="range"
           id="min-update-time"
@@ -393,7 +430,7 @@
           value="__MIN_UPDATE_TIME__"
           oninput="document.getElementById('min-update-time-val').innerText = this.value + 's'"
         />
-        <span id="min-update-time-val" style="min-width: 48px; text-align: right; font-weight: bold; color: #4fc3f7;">__MIN_UPDATE_TIME__s</span>
+        <span id="min-update-time-val" style="min-width: 48px; text-align: right; font-weight: bold; color: #FA4A36;">__MIN_UPDATE_TIME__s</span>
       </div>
     </div>
     <button onclick="saveAndClose()">Save & Close</button>
@@ -587,9 +624,9 @@
         cv.width = cw;
         cv.height = ch;
         var cx = cv.getContext("2d");
-        cx.fillStyle = "#0f3460";
+        cx.fillStyle = "#2a2a2a";
         cx.fillRect(0, 0, cw, ch);
-        cx.fillStyle = "#4fc3f7";
+        cx.fillStyle = "#FA4A36";
         cx.font = "12px sans-serif";
         cx.textAlign = "center";
         cx.fillText("Loading route...", cw / 2, ch / 2);
@@ -601,10 +638,10 @@
         fetch(url).then(function (r) {
           return r.json()
         }).then(function (rData) {
-          cx.fillStyle = "#0f3460";
+          cx.fillStyle = "#2a2a2a";
           cx.fillRect(0, 0, cw, ch);
           if (!rData || rData.code !== "Ok" || !rData.routes || !rData.routes.length) {
-            cx.fillStyle = "#e74c3c";
+            cx.fillStyle = "#FA4A36";
             cx.font = "12px sans-serif";
             cx.fillText("Route not found", 10, 20);
             return

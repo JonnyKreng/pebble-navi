@@ -79,7 +79,13 @@ function dictateSearch(query, mapHandler) {
                     _a.label = 1;
                 case 1:
                     _a.trys.push([1, 4, , 5]);
-                    url = 'https://photon.komoot.io/api/?q=' + encodeURIComponent(query) + '&lat=' + pos.lat + '&lon=' + pos.lng + '&limit=6';
+                    url = 'https://photon.komoot.io/api/?q=' +
+                        encodeURIComponent(query) +
+                        '&lat=' +
+                        pos.lat +
+                        '&lon=' +
+                        pos.lng +
+                        '&limit=6';
                     return [4 /*yield*/, fetch(url)];
                 case 2:
                     res = _a.sent();

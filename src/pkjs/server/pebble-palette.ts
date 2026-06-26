@@ -50,7 +50,7 @@ export function quantizeToPebble2Bit(
   const blackCutoff = (100 - brightness) / 100;
 
   for (let i = 0; i < numPixels; i++) {
-    const rawL = (rgba[i * 4] + rgba[i * 4 + 1] + rgba[i * 4 + 2]) / 3 / 255; 
+    const rawL = (rgba[i * 4] + rgba[i * 4 + 1] + rgba[i * 4 + 2]) / 3 / 255;
     var processedL;
     if (rawL <= blackCutoff) {
       processedL = 0.0;
@@ -59,7 +59,7 @@ export function quantizeToPebble2Bit(
     } else {
       // Normalize and push through contrast curve
       const normalized = (rawL - blackCutoff) / (whiteCutoff - blackCutoff);
-      processedL = Math.pow(normalized, 1.5); 
+      processedL = Math.pow(normalized, 1.5);
     }
     const gray = Math.round(processedL * 3);
     const idx = i >> 2;

@@ -1,7 +1,6 @@
 import { VERSION } from './version';
 
-const OTLP_ENDPOINT =
-  'https://otlp-gateway-prod-eu-west-2.grafana.net/otlp/v1/logs';
+const OTLP_ENDPOINT = 'https://otlp-gateway-prod-eu-west-2.grafana.net/otlp/v1/logs';
 const OTLP_HEADERS: Record<string, string> = {
   Authorization:
     'Basic MTY5MDU4MTpnbGNfZXlKdklqb2lNVGd4TVRZNE1TSXNJbTRpT2lKdVlYWnBMV0Z3Y0NJc0ltc2lPaUpIWlRZNFYwYzNZemcwT1d0TWEwbExNVGxZTjAxd05Ia2lMQ0p0SWpwN0luSWlPaUp3Y205a0xXVjFMWGRsYzNRdE1pSjlmUT09',
@@ -143,9 +142,7 @@ export function initTelemetry(): void {
       orig[method].apply(console, args);
       if (isTelemetryEnabled()) {
         const body = args
-          .map((a: any) =>
-            typeof a === 'object' && a !== null ? JSON.stringify(a) : String(a),
-          )
+          .map((a: any) => (typeof a === 'object' && a !== null ? JSON.stringify(a) : String(a)))
           .join(' ');
         buffer.push({
           time: String(Date.now()) + '000000',

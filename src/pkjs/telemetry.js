@@ -141,9 +141,7 @@ function initTelemetry() {
             orig[method].apply(console, args);
             if (isTelemetryEnabled()) {
                 var body = args
-                    .map(function (a) {
-                    return typeof a === 'object' && a !== null ? JSON.stringify(a) : String(a);
-                })
+                    .map(function (a) { return (typeof a === 'object' && a !== null ? JSON.stringify(a) : String(a)); })
                     .join(' ');
                 buffer.push({
                     time: String(Date.now()) + '000000',

@@ -96,7 +96,9 @@ var MapHandler = /** @class */ (function () {
                 if (!isManualAction) {
                     if (now - _this.lastRenderTime < minUpdateTimeMs) {
                         if (test_data_1.ENABLE_LOGS)
-                            console.log('Throttling location update: ' + (now - _this.lastRenderTime) + 'ms since last render');
+                            console.log('Throttling location update: ' +
+                                (now - _this.lastRenderTime) +
+                                'ms since last render');
                         return false;
                     }
                 }
@@ -323,9 +325,10 @@ var MapHandler = /** @class */ (function () {
             if (currentPos) {
                 var progress = (0, routing_1.routeProgress)(output.route.coordinates, currentPos);
                 remainingDist = Math.max(0, output.route.distance - progress.cumDist);
-                remainingDuration = output.route.distance > 0
-                    ? output.route.duration * (remainingDist / output.route.distance)
-                    : output.route.duration;
+                remainingDuration =
+                    output.route.distance > 0
+                        ? output.route.duration * (remainingDist / output.route.distance)
+                        : output.route.duration;
             }
             var d = remainingDist;
             var m = Math.round(remainingDuration / 60);

@@ -45,7 +45,14 @@ export async function dictateSearch(query: string, mapHandler: MapHandler): Prom
   }
 
   try {
-    const url = 'https://photon.komoot.io/api/?q=' + encodeURIComponent(query) + '&lat=' + pos.lat + '&lon=' + pos.lng + '&limit=6';
+    const url =
+      'https://photon.komoot.io/api/?q=' +
+      encodeURIComponent(query) +
+      '&lat=' +
+      pos.lat +
+      '&lon=' +
+      pos.lng +
+      '&limit=6';
     const res = await fetch(url);
     const data = await res.json();
 
