@@ -24,6 +24,7 @@ import {
   loadShowDestinationHint,
   loadMinimumUpdateTime,
   loadVibrationDisabled,
+  loadNavInfoLine2Size,
 } from './helper';
 import { ENABLE_LOGS } from './test-data';
 
@@ -467,7 +468,13 @@ export class MapHandler {
           units === 'imperial'
             ? `${Math.round(ns.remainingDist / 0.3048)} ft`
             : `${Math.round(ns.remainingDist)} m`;
-        dict.NAV_INFO_LINE2 = `${ns.step.modifier || ''} ${asciiNormalize(ns.step.name) || ''} (${stepDist})`;
+
+        const size = loadNavInfoLine2Size();
+        if (size == 'small') {
+          dict.NAV_INFO_LINE2 = `${ns.step.modifier || ''} ${asciiNormalize(ns.step.name) || ''} (${stepDist})`;
+        } else {
+          dict.NAV_INFO_LINE2 = `${ns.step.modifier || ''} (${stepDist})`;
+        }
       } else {
         dict.NAV_INFO_LINE2 = '';
       }

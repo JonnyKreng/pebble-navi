@@ -1,6 +1,6 @@
 import './server/polyfills';
 import { buildSettings, saveSettings } from './settings';
-import { loadDestinations, loadShowDictation, saveDestinations } from './helper';
+import { loadDestinations, loadShowDictation, loadNavInfoLine2Size, navInfoLine2SizeToInt, saveDestinations } from './helper';
 import { fromEvent, map, Subject, takeUntil, tap } from 'rxjs';
 import { sendDestinationsToWatch } from './destionations';
 import { dictateSearch, dictationResults } from './dictation';
@@ -130,7 +130,10 @@ fromEvent(Pebble, 'webviewclosed').subscribe((e) => {
       saveSettings(e.response);
       mapHandler?.onSettingsChanged();
       Pebble.sendAppMessage(
-        { SHOW_DICTATION: loadShowDictation() ? 1 : 0 },
+        {
+          SHOW_DICTATION: loadShowDictation() ? 1 : 0,
+          NAV_INFO_LINE2_SIZE: navInfoLine2SizeToInt(loadNavInfoLine2Size()),
+        },
         () => {},
         (err) => console.error('SHOW_DICTATION send failed: ' + err.error),
       );
@@ -166,6 +169,7 @@ fromEvent(Pebble, 'ready')
           ROUTE_MODE: mapHandler.getRouteMode(),
           ROTATION_MODE: mapHandler.getRotationMode() ? 1 : 0,
           SHOW_DICTATION: loadShowDictation() ? 1 : 0,
+          NAV_INFO_LINE2_SIZE: navInfoLine2SizeToInt(loadNavInfoLine2Size()),
         },
         () => {},
         (err) => console.error('Initial state send failed: ' + err.error),

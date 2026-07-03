@@ -108,7 +108,10 @@ var mapHandler;
         if (e.response) {
             (0, settings_1.saveSettings)(e.response);
             mapHandler === null || mapHandler === void 0 ? void 0 : mapHandler.onSettingsChanged();
-            Pebble.sendAppMessage({ SHOW_DICTATION: (0, helper_1.loadShowDictation)() ? 1 : 0 }, function () { }, function (err) { return console.error('SHOW_DICTATION send failed: ' + err.error); });
+            Pebble.sendAppMessage({
+                SHOW_DICTATION: (0, helper_1.loadShowDictation)() ? 1 : 0,
+                NAV_INFO_LINE2_SIZE: (0, helper_1.navInfoLine2SizeToInt)((0, helper_1.loadNavInfoLine2Size)()),
+            }, function () { }, function (err) { return console.error('SHOW_DICTATION send failed: ' + err.error); });
         }
         (0, telemetry_1.flushTelemetry)();
     }
@@ -135,6 +138,7 @@ var mapHandler;
             ROUTE_MODE: mapHandler.getRouteMode(),
             ROTATION_MODE: mapHandler.getRotationMode() ? 1 : 0,
             SHOW_DICTATION: (0, helper_1.loadShowDictation)() ? 1 : 0,
+            NAV_INFO_LINE2_SIZE: (0, helper_1.navInfoLine2SizeToInt)((0, helper_1.loadNavInfoLine2Size)()),
         }, function () { }, function (err) { return console.error('Initial state send failed: ' + err.error); });
         location.pipe((0, rxjs_1.takeUntil)(destroyApp)).subscribe({
             next: function (pos) {

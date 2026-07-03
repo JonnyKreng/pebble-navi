@@ -18,6 +18,9 @@ exports.loadMinimumUpdateTime = loadMinimumUpdateTime;
 exports.saveMinimumUpdateTime = saveMinimumUpdateTime;
 exports.loadVibrationDisabled = loadVibrationDisabled;
 exports.saveVibrationDisabled = saveVibrationDisabled;
+exports.loadNavInfoLine2Size = loadNavInfoLine2Size;
+exports.saveNavInfoLine2Size = saveNavInfoLine2Size;
+exports.navInfoLine2SizeToInt = navInfoLine2SizeToInt;
 exports.loadDestinations = loadDestinations;
 exports.saveDestinations = saveDestinations;
 exports.encodeLZSS = encodeLZSS;
@@ -35,6 +38,7 @@ var SHOW_DESTINATION_HINT_KEY = 'show_destination_hint';
 var SHOW_DICTATION_KEY = 'show_dictation';
 var MINIMUM_UPDATE_TIME_KEY = 'minimum_update_time';
 var VIBRATION_DISABLED_KEY = 'vibration_disabled';
+var NAV_INFO_LINE2_SIZE_KEY = 'nav_info_line2_size';
 function loadSettings() {
     try {
         var saved = localStorage.getItem(SETTINGS_KEY);
@@ -111,6 +115,17 @@ function loadVibrationDisabled() {
 }
 function saveVibrationDisabled(disabled) {
     localStorage.setItem(VIBRATION_DISABLED_KEY, disabled ? 'true' : 'false');
+}
+function loadNavInfoLine2Size() {
+    return localStorage.getItem(NAV_INFO_LINE2_SIZE_KEY) || 'small';
+}
+function saveNavInfoLine2Size(size) {
+    localStorage.setItem(NAV_INFO_LINE2_SIZE_KEY, size);
+}
+function navInfoLine2SizeToInt(size) {
+    var _a;
+    var map = { small: 0, middle: 1, big: 2 };
+    return (_a = map[size]) !== null && _a !== void 0 ? _a : 0;
 }
 function loadDestinations() {
     try {

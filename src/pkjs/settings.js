@@ -14,6 +14,7 @@ function buildSettings(userLat, userLng) {
     var showDictation = (0, helper_1.loadShowDictation)();
     var vibrationDisabled = (0, helper_1.loadVibrationDisabled)();
     var minUpdateTime = (0, helper_1.loadMinimumUpdateTime)();
+    var navInfoLine2Size = (0, helper_1.loadNavInfoLine2Size)();
     var html = settings_template_1.SETTINGS_HTML;
     html = html.replace('__DESTINATIONS__', JSON.stringify(destinations));
     html = html.replace('__UNITS_METRIC_CHECKED__', units === 'metric' ? ' checked' : '');
@@ -25,6 +26,9 @@ function buildSettings(userLat, userLng) {
     html = html.replace('__SHOW_DICTATION_CHECKED__', showDictation ? ' checked' : '');
     html = html.replace('__VIBRATION_DISABLED_CHECKED__', vibrationDisabled ? ' checked' : '');
     html = html.replace(/__MIN_UPDATE_TIME__/g, String(minUpdateTime));
+    html = html.replace('__NAV_INFO_LINE2_SIZE_SMALL_CHECKED__', navInfoLine2Size === 'small' ? ' checked' : '');
+    html = html.replace('__NAV_INFO_LINE2_SIZE_MIDDLE_CHECKED__', navInfoLine2Size === 'middle' ? ' checked' : '');
+    html = html.replace('__NAV_INFO_LINE2_SIZE_BIG_CHECKED__', navInfoLine2Size === 'big' ? ' checked' : '');
     html = html.replace('__ROUTING_MODE__', (0, helper_1.loadSettings)().mode);
     html = html.replace('__USER_LAT__', userLat !== undefined ? String(userLat) : 'undefined');
     html = html.replace('__USER_LNG__', userLng !== undefined ? String(userLng) : 'undefined');
@@ -60,6 +64,9 @@ function saveSettings(response) {
         }
         if (data.minimum_update_time !== undefined) {
             (0, helper_1.saveMinimumUpdateTime)(data.minimum_update_time);
+        }
+        if (data.nav_info_line2_size !== undefined) {
+            (0, helper_1.saveNavInfoLine2Size)(data.nav_info_line2_size);
         }
     }
     catch (err) {

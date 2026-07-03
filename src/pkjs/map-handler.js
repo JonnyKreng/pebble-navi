@@ -356,7 +356,13 @@ var MapHandler = /** @class */ (function () {
                 var stepDist = units === 'imperial'
                     ? "".concat(Math.round(ns.remainingDist / 0.3048), " ft")
                     : "".concat(Math.round(ns.remainingDist), " m");
-                dict.NAV_INFO_LINE2 = "".concat(ns.step.modifier || '', " ").concat((0, helper_1.asciiNormalize)(ns.step.name) || '', " (").concat(stepDist, ")");
+                var size = (0, helper_1.loadNavInfoLine2Size)();
+                if (size == 'small') {
+                    dict.NAV_INFO_LINE2 = "".concat(ns.step.modifier || '', " ").concat((0, helper_1.asciiNormalize)(ns.step.name) || '', " (").concat(stepDist, ")");
+                }
+                else {
+                    dict.NAV_INFO_LINE2 = "".concat(ns.step.modifier || '', " (").concat(stepDist, ")");
+                }
             }
             else {
                 dict.NAV_INFO_LINE2 = '';

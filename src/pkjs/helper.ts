@@ -11,6 +11,7 @@ const SHOW_DESTINATION_HINT_KEY = 'show_destination_hint';
 const SHOW_DICTATION_KEY = 'show_dictation';
 const MINIMUM_UPDATE_TIME_KEY = 'minimum_update_time';
 const VIBRATION_DISABLED_KEY = 'vibration_disabled';
+const NAV_INFO_LINE2_SIZE_KEY = 'nav_info_line2_size';
 
 export interface NavSettings {
   zoom: number;
@@ -110,6 +111,19 @@ export function loadVibrationDisabled(): boolean {
 
 export function saveVibrationDisabled(disabled: boolean): void {
   localStorage.setItem(VIBRATION_DISABLED_KEY, disabled ? 'true' : 'false');
+}
+
+export function loadNavInfoLine2Size(): string {
+  return localStorage.getItem(NAV_INFO_LINE2_SIZE_KEY) || 'small';
+}
+
+export function saveNavInfoLine2Size(size: string): void {
+  localStorage.setItem(NAV_INFO_LINE2_SIZE_KEY, size);
+}
+
+export function navInfoLine2SizeToInt(size: string): number {
+  const map: Record<string, number> = { small: 0, middle: 1, big: 2 };
+  return map[size] ?? 0;
 }
 
 export function loadDestinations(): Destination[] {

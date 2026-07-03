@@ -19,6 +19,8 @@ import {
   saveVibrationDisabled,
   loadMinimumUpdateTime,
   saveMinimumUpdateTime,
+  loadNavInfoLine2Size,
+  saveNavInfoLine2Size,
 } from './helper';
 import { SETTINGS_HTML } from './settings-template';
 
@@ -32,6 +34,7 @@ export function buildSettings(userLat?: number, userLng?: number): string {
   const showDictation = loadShowDictation();
   const vibrationDisabled = loadVibrationDisabled();
   const minUpdateTime = loadMinimumUpdateTime();
+  const navInfoLine2Size = loadNavInfoLine2Size();
 
   let html = SETTINGS_HTML;
   html = html.replace('__DESTINATIONS__', JSON.stringify(destinations));
@@ -44,6 +47,9 @@ export function buildSettings(userLat?: number, userLng?: number): string {
   html = html.replace('__SHOW_DICTATION_CHECKED__', showDictation ? ' checked' : '');
   html = html.replace('__VIBRATION_DISABLED_CHECKED__', vibrationDisabled ? ' checked' : '');
   html = html.replace(/__MIN_UPDATE_TIME__/g, String(minUpdateTime));
+  html = html.replace('__NAV_INFO_LINE2_SIZE_SMALL_CHECKED__', navInfoLine2Size === 'small' ? ' checked' : '');
+  html = html.replace('__NAV_INFO_LINE2_SIZE_MIDDLE_CHECKED__', navInfoLine2Size === 'middle' ? ' checked' : '');
+  html = html.replace('__NAV_INFO_LINE2_SIZE_BIG_CHECKED__', navInfoLine2Size === 'big' ? ' checked' : '');
   html = html.replace('__ROUTING_MODE__', loadSettings().mode);
   html = html.replace('__USER_LAT__', userLat !== undefined ? String(userLat) : 'undefined');
   html = html.replace('__USER_LNG__', userLng !== undefined ? String(userLng) : 'undefined');
@@ -80,6 +86,9 @@ export function saveSettings(response: string): Destination[] {
     }
     if (data.minimum_update_time !== undefined) {
       saveMinimumUpdateTime(data.minimum_update_time);
+    }
+    if (data.nav_info_line2_size !== undefined) {
+      saveNavInfoLine2Size(data.nav_info_line2_size);
     }
   } catch (err) {
     console.log('Config parse error: ' + err);

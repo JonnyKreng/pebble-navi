@@ -2,6 +2,14 @@
 #include "navigation.h"
 #include "menu.h"
 
+#ifdef PBL_PLATFORM_GABBRO
+#define OFFSET 30
+#elif  defined(PBL_PLATFORM_CHALK)
+#define OFFSET 20
+#else
+#define OFFSET 0
+#endif
+
 static Window* s_main_window;
 static Layer* s_map_layer;
 static TextLayer* s_route_summary_layer;
@@ -10,11 +18,21 @@ static TextLayer* s_waiting_layer;
 static char* s_route_summary_text;
 static char* s_next_step_text;
 static uint32_t max_message_size = 2028;
+static int s_nav_info_line2_size = 0; // 0=small, 1=middle, 2=big
 
 static bool s_js_ready = false;
 static bool s_pending = false;
 static uint32_t s_pending_key;
 static unsigned int s_pending_val;
+
+static int get_line2_height(void) {
+    switch (s_nav_info_line2_size) {
+        case 0: return 18;
+        case 1: return 24;
+        case 2: return 30;
+        default: return 18;
+    }
+}
 
 static void try_flush_pending(void)
 {
@@ -31,7 +49,7 @@ int main_get_text_layers_height(void)
 {
     if (s_next_step_layer && !layer_get_hidden(text_layer_get_layer(s_next_step_layer)))
     {
-        return 36;
+        return get_line2_height() + 18;
     }
     if (s_route_summary_layer && !layer_get_hidden(text_layer_get_layer(s_route_summary_layer)))
     {
@@ -65,6 +83,35 @@ static void inbox_received(DictionaryIterator* iter, void* ctx)
     if (rotation_mode_t)
     {
         menu_set_rotation_mode(rotation_mode_t->value->int32 != 0);
+    }
+
+    Tuple* nav_line2_size = dict_find(iter, MESSAGE_KEY_NAV_INFO_LINE2_SIZE);
+    if (nav_line2_size)
+    {
+        int new_size = nav_line2_size->value->int32;
+        if (new_size < 0) new_size = 0;
+        if (new_size > 2) new_size = 2;
+        if (new_size != s_nav_info_line2_size)
+        {
+            s_nav_info_line2_size = new_size;
+            Layer* window_layer = window_get_root_layer(s_main_window);
+            GRect bounds = layer_get_bounds(window_layer);
+            int h = get_line2_height();
+            switch (s_nav_info_line2_size)
+            {
+                case 0:
+                    text_layer_set_font(s_next_step_layer, fonts_get_system_font(FONT_KEY_GOTHIC_14_BOLD));
+                    break;
+                case 1:
+                    text_layer_set_font(s_next_step_layer, fonts_get_system_font(FONT_KEY_GOTHIC_18_BOLD));
+                    break;
+                case 2:
+                    text_layer_set_font(s_next_step_layer, fonts_get_system_font(FONT_KEY_GOTHIC_24_BOLD));
+                    break;
+            }
+            layer_set_frame(text_layer_get_layer(s_next_step_layer), GRect(0, bounds.size.h - h - 18 - OFFSET, bounds.size.w, h));
+            layer_mark_dirty(s_map_layer);
+        }
     }
 
     Tuple* nav_line1 = dict_find(iter, MESSAGE_KEY_NAV_INFO_LINE1);
@@ -216,14 +263,6 @@ static void main_window_load(Window* window)
     s_map_layer = navigation_create_map_layer(bounds);
     layer_add_child(window_layer, s_map_layer);
 
-
-#ifdef PBL_PLATFORM_GABBRO
-#define OFFSET 30
-#elif  defined(PBL_PLATFORM_CHALK)
-#define OFFSET 20
-#else
-#define OFFSET 0
-#endif
 
     s_next_step_layer = text_layer_create(GRect(0, bounds.size.h - 36 - OFFSET, bounds.size.w, 18));
     text_layer_set_background_color(s_next_step_layer, GColorBlack);

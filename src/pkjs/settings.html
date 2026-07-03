@@ -515,6 +515,19 @@
       >
         <input type="checkbox" id="show-dest-hint" __SHOW_DEST_HINT_CHECKED__ /> Show "Select Destination" / "Add Destination" hints when no route is active
       </label>
+      <div class="section-title">Navigation Info Font Size</div>
+      <div style="display: flex; gap: 8px; margin: 8px 0">
+        <label style="flex:1;text-align:center;padding:8px;background:#2a2a2a;border-radius:6px;cursor:pointer;">
+          <input type="radio" name="nav_info_line2_size" value="small" __NAV_INFO_LINE2_SIZE_SMALL_CHECKED__ /> Small
+        </label>
+        <label style="flex:1;text-align:center;padding:8px;background:#2a2a2a;border-radius:6px;cursor:pointer;">
+          <input type="radio" name="nav_info_line2_size" value="middle" __NAV_INFO_LINE2_SIZE_MIDDLE_CHECKED__ /> Middle
+        </label>
+        <label style="flex:1;text-align:center;padding:8px;background:#2a2a2a;border-radius:6px;cursor:pointer;">
+          <input type="radio" name="nav_info_line2_size" value="big" __NAV_INFO_LINE2_SIZE_BIG_CHECKED__ /> Big
+        </label>
+      </div>
+      <div class="notice">Note: With Middle or Big selected, the street name will be hidden and only the turn modifier will be shown.</div>
     </div>
     <button onclick="saveAndClose()">Save & Close</button>
     <div class="section-title">Attributions</div>
@@ -662,6 +675,7 @@
           var sd = document.getElementById("show-dictation").checked;
           var vd = document.getElementById("vibration-disabled").checked;
           var mut = parseInt(document.getElementById("min-update-time").value, 10);
+          var nls = document.querySelector('input[name="nav_info_line2_size"]:checked');
           var payload = {
               destinations: dests,
               units: u ? u.value : "metric",
@@ -671,7 +685,8 @@
               show_destination_hint: sdh,
               show_dictation: sd,
               vibration_disabled: vd,
-              minimum_update_time: isNaN(mut) ? 0 : mut
+              minimum_update_time: isNaN(mut) ? 0 : mut,
+              nav_info_line2_size: nls ? nls.value : "small"
           };
           document.location = "pebblejs://close#" + encodeURIComponent(JSON.stringify(payload))
       }
