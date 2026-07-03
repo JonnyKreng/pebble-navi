@@ -2,8 +2,8 @@ import { interval, Subject } from 'rxjs';
 import { isTelemetryEnabled } from './telemetry';
 
 export const ENABLE_LOGS = isTelemetryEnabled();
-export const DO_TESTING: boolean = true;
-export const DO_MOVEMENT_TESTING: boolean = true;
+export const DO_TESTING: boolean = false;
+export const DO_MOVEMENT_TESTING: boolean = false;
 
 export const TEST_DESTINATIONS = DO_TESTING
   ? [

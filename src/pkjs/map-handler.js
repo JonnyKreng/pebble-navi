@@ -339,6 +339,7 @@ var MapHandler = /** @class */ (function () {
             var h = Math.floor(m / 60);
             var mins = m % 60;
             var time = h > 0 ? (mins > 0 ? "".concat(h, " h ").concat(mins, " min") : "".concat(h, " h")) : "".concat(m, " min");
+            // Navigation Info 2st Line
             if (units === 'imperial') {
                 var mi = d / 1609.344;
                 dict.NAV_INFO_LINE1 =
@@ -349,6 +350,7 @@ var MapHandler = /** @class */ (function () {
                     d >= 1000 ? "".concat((d / 1000).toFixed(1), " km  ").concat(time) : "".concat(Math.round(d), " m  ").concat(time);
             }
             dict.ROUTE_ACTIVE = 1;
+            // Navigation Info 1st Line
             var ns = output.nextStep;
             if (ns && Math.round(ns.remainingDist) > 0) {
                 var stepDist = units === 'imperial'
@@ -359,17 +361,18 @@ var MapHandler = /** @class */ (function () {
             else {
                 dict.NAV_INFO_LINE2 = '';
             }
+            // Vibration
             var mode = this.mapState.value.mode;
             var vibrationDisabled = (0, helper_1.loadVibrationDisabled)();
-            var vibratePattern = 0;
             if (mode !== 'driving' && !vibrationDisabled) {
+                var vibratePattern = 0;
                 if (ns && ns.step.modifier && Math.round(ns.remainingDist) > 0) {
                     var stepKey = "".concat(ns.step.location.lat, ",").concat(ns.step.location.lng);
                     var isWalk = mode === 'walking';
                     var isCycle = mode === 'cycling';
                     var dist = ns.remainingDist;
                     if (stepKey !== this.lastVibrateStepKey &&
-                        ((isWalk && dist <= 30) || (isCycle && dist <= 50))) {
+                        ((isWalk && dist <= 10) || (isCycle && dist <= 30))) {
                         var mod = ns.step.modifier;
                         if (mod === 'left' || mod === 'sharp left') {
                             vibratePattern = 1;
@@ -382,20 +385,20 @@ var MapHandler = /** @class */ (function () {
                         }
                     }
                 }
-            }
-            var stepLocation = ns ? "".concat(ns.step.location.lat, ",").concat(ns.step.location.lng) : null;
-            if (vibratePattern !== 0) {
-                if (stepLocation && stepLocation === this.lastVibratedStepLocation) {
-                    vibratePattern = 0;
+                var stepLocation = ns ? "".concat(ns.step.location.lat, ",").concat(ns.step.location.lng) : null;
+                if (vibratePattern !== 0) {
+                    if (stepLocation && stepLocation === this.lastVibratedStepLocation) {
+                        vibratePattern = 0;
+                    }
+                    else {
+                        this.lastVibratedStepLocation = stepLocation;
+                    }
                 }
                 else {
-                    this.lastVibratedStepLocation = stepLocation;
+                    this.lastVibratedStepLocation = null;
                 }
+                dict.VIBRATE_PATTERN = vibratePattern;
             }
-            else {
-                this.lastVibratedStepLocation = null;
-            }
-            dict.VIBRATE_PATTERN = vibratePattern;
         }
         Pebble.sendAppMessage(dict, function () { }, function (err) { return console.error('Route info send failed: ' + err.error); });
     };
