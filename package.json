@@ -35,7 +35,12 @@
       "DICTATE_RESULT_NAME",
       "DICTATE_RESULT_DISTANCE",
       "DICTATE_SELECT_INDEX",
-      "SHOW_DICTATION"
+      "SHOW_DICTATION",
+      "TEXT_MODE",
+      "TEXT_MODE_HEADING",
+      "TEXT_MODE_SUBTITLE",
+      "TEXT_MODE_DISTANCE",
+      "TEXT_MODE_BEARING"
     ],
     "projectType": "native",
     "resources": {

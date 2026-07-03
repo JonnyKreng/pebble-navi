@@ -42,6 +42,7 @@ var MapHandler = /** @class */ (function () {
         this.lastRenderedState = null;
         this.isBw = false;
         this.rotationMode = false;
+        this.textMode = false;
         this.isEmulator = false;
         this.mapState = new rxjs_1.BehaviorSubject({});
         this.userVerticalOffset = undefined;
@@ -121,8 +122,10 @@ var MapHandler = /** @class */ (function () {
                 console.time('renderForState');
                 console.time('pipeline');
             }
-            var stateWithBrightness = __assign(__assign({}, state), { brightness: (0, helper_1.loadBrightness)() });
-            return (0, rxjs_1.from)((0, stateRenderer_1.renderForState)(stateWithBrightness, _this.existingRoute, _this.isBw, _this.userVerticalOffset)).pipe((0, rxjs_1.tap)(function () {
+            var task = _this.textMode
+                ? (0, stateRenderer_1.getTextModeOutput)(state, _this.existingRoute)
+                : (0, stateRenderer_1.renderForState)(__assign(__assign({}, state), { brightness: (0, helper_1.loadBrightness)() }), _this.existingRoute, _this.isBw, _this.userVerticalOffset);
+            return (0, rxjs_1.from)(task).pipe((0, rxjs_1.tap)(function () {
                 if (test_data_1.ENABLE_LOGS)
                     console.timeEnd('renderForState');
             }), (0, rxjs_1.map)(function (output) { return ({ output: output, state: state }); }));
@@ -210,6 +213,12 @@ var MapHandler = /** @class */ (function () {
         var s = this.mapState.value;
         (0, helper_1.saveSettings)({ zoom: s.zoom, mode: s.mode, rotationMode: enabled });
     };
+    MapHandler.prototype.setTextMode = function (enabled) {
+        console.log('setTextMode', enabled);
+        this.textMode = enabled;
+        (0, helper_1.saveTextMode)(enabled);
+        this.mapState.next(__assign({}, this.mapState.value));
+    };
     MapHandler.prototype.zoom = function (zoom) {
         if (test_data_1.ENABLE_LOGS)
             console.info('zoom', zoom);
@@ -229,7 +238,9 @@ var MapHandler = /** @class */ (function () {
     MapHandler.prototype.onMapRendered = function (renderOutput, currentPos) {
         this.existingRoute = renderOutput.route;
         this.sendRouteToWatch(renderOutput, currentPos);
-        this.sendBitmapToWatch(renderOutput.pixels);
+        if (!this.textMode) {
+            this.sendBitmapToWatch(renderOutput.pixels);
+        }
     };
     MapHandler.prototype.sendBitmapToWatch = function (pixels) {
         var _this = this;
@@ -356,7 +367,71 @@ var MapHandler = /** @class */ (function () {
                 dict.NAV_INFO_LINE2 = '';
             }
         }
+        if (this.textMode) {
+            if (output.route && output.nextStep) {
+                var stepDist = units === 'imperial'
+                    ? "".concat(Math.round(output.nextStep.remainingDist / 0.3048), " ft")
+                    : "".concat(Math.round(output.nextStep.remainingDist), " m");
+                dict.TEXT_MODE_HEADING = this.formatTurnInstruction(output.nextStep.step);
+                dict.TEXT_MODE_SUBTITLE = (0, helper_1.asciiNormalize)(output.nextStep.step.name || '');
+                dict.TEXT_MODE_DISTANCE = stepDist;
+                if (currentPos && output.route.coordinates.length > 0) {
+                    dict.TEXT_MODE_BEARING = Math.round((0, routing_1.bearingTo)(currentPos, output.nextStep.step.location));
+                }
+            }
+            else if (currentPos) {
+                dict.TEXT_MODE_HEADING = "".concat(currentPos.lat.toFixed(4), ", ").concat(currentPos.lng.toFixed(4));
+                dict.TEXT_MODE_SUBTITLE = '';
+                dict.TEXT_MODE_DISTANCE = '';
+                dict.TEXT_MODE_BEARING = -1;
+            }
+        }
         Pebble.sendAppMessage(dict, function () { }, function (err) { return console.error('Route info send failed: ' + err.error); });
+    };
+    MapHandler.prototype.formatTurnInstruction = function (step) {
+        var type = step.type;
+        var mod = step.modifier;
+        if (type === 'turn' || type === 'continue') {
+            if (mod === 'left')
+                return 'Turn left';
+            if (mod === 'right')
+                return 'Turn right';
+            if (mod === 'sharp left')
+                return 'Sharp left';
+            if (mod === 'sharp right')
+                return 'Sharp right';
+            if (mod === 'slight left')
+                return 'Slight left';
+            if (mod === 'slight right')
+                return 'Slight right';
+            if (mod === 'straight')
+                return 'Continue straight';
+            if (mod === 'uturn')
+                return 'Make a U-turn';
+        }
+        if (type === 'roundabout' || type === 'rotary')
+            return 'Enter roundabout';
+        if (type === 'arrive')
+            return 'You have arrived';
+        if (type === 'depart')
+            return 'Depart';
+        if (type === 'fork') {
+            if (mod === 'left')
+                return 'Keep left';
+            if (mod === 'right')
+                return 'Keep right';
+        }
+        if (type === 'merge')
+            return 'Merge';
+        if (type === 'end of road') {
+            if (mod === 'left')
+                return 'Turn left';
+            if (mod === 'right')
+                return 'Turn right';
+            if (mod === 'straight')
+                return 'Continue straight';
+        }
+        return mod || type || '';
     };
     MapHandler.prototype.getRecalculationDistance = function () {
         switch (this.mapState.value.mode) {

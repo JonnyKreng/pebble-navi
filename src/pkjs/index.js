@@ -61,6 +61,9 @@ var mapHandler;
                         mapHandler.selectRoute({ lat: result.lat, lng: result.lng, name: result.name });
                     }
                 }
+                if (payload.TEXT_MODE !== undefined) {
+                    mapHandler.setTextMode(payload.TEXT_MODE !== 0);
+                }
                 if (payload.SAVE_CURRENT_LOCATION !== undefined) {
                     var pos = mapHandler.getCurrentPosition();
                     if (pos) {
@@ -130,11 +133,13 @@ var mapHandler;
         console.log('PebbleKit JS ready! Setting up new session.');
         (0, telemetry_1.setWatchInfo)(Pebble.getActiveWatchInfo());
         mapHandler = new map_handler_1.MapHandler(destroyApp);
+        mapHandler.setTextMode((0, helper_1.loadTextMode)());
         // Sync saved settings to watch on connect
         Pebble.sendAppMessage({
             ROUTE_MODE: mapHandler.getRouteMode(),
             ROTATION_MODE: mapHandler.getRotationMode() ? 1 : 0,
             SHOW_DICTATION: (0, helper_1.loadShowDictation)() ? 1 : 0,
+            TEXT_MODE: (0, helper_1.loadTextMode)() ? 1 : 0,
         }, function () { }, function (err) { return console.error('Initial state send failed: ' + err.error); });
         location.pipe((0, rxjs_1.takeUntil)(destroyApp)).subscribe({
             next: function (pos) {

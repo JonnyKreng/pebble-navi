@@ -6,7 +6,6 @@ typedef enum {
     MODE_MAP,
     MODE_MAIN_MENU,
     MODE_DEST_LIST,
-    MODE_ABOUT,
     MODE_DICTATE_LIST,
     MODE_DICTATE_WAITING,
 } MenuMode;
@@ -28,6 +27,7 @@ void menu_set_route_mode(RouteMode mode);
 void menu_set_rotation_mode(bool enabled);
 void menu_set_show_dictation(bool show);
 void menu_hide(void);
+void menu_set_text_mode(bool enabled);
 bool menu_handle_up(void);
 bool menu_handle_down(void);
 bool menu_handle_select(void);

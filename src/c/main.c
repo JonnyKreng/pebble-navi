@@ -70,12 +70,14 @@ static void inbox_received(DictionaryIterator* iter, void* ctx)
     Tuple* nav_line1 = dict_find(iter, MESSAGE_KEY_NAV_INFO_LINE1);
     if (nav_line1)
     {
+        navigation_set_arrival_text(nav_line1->value->cstring);
         free(s_route_summary_text);
         size_t len = strlen(nav_line1->value->cstring) + 1;
         s_route_summary_text = malloc(len);
         memcpy(s_route_summary_text, nav_line1->value->cstring, len);
         text_layer_set_text(s_route_summary_layer, s_route_summary_text);
-        layer_set_hidden(text_layer_get_layer(s_route_summary_layer), s_route_summary_text[0] == '\0');
+        bool hidden = s_route_summary_text[0] == '\0' || navigation_get_text_mode();
+        layer_set_hidden(text_layer_get_layer(s_route_summary_layer), hidden);
     }
     Tuple* nav_line2 = dict_find(iter, MESSAGE_KEY_NAV_INFO_LINE2);
     if (nav_line2)
@@ -85,7 +87,8 @@ static void inbox_received(DictionaryIterator* iter, void* ctx)
         s_next_step_text = malloc(len);
         memcpy(s_next_step_text, nav_line2->value->cstring, len);
         text_layer_set_text(s_next_step_layer, s_next_step_text);
-        layer_set_hidden(text_layer_get_layer(s_next_step_layer), s_next_step_text[0] == '\0');
+        bool hidden = s_next_step_text[0] == '\0' || navigation_get_text_mode();
+        layer_set_hidden(text_layer_get_layer(s_next_step_layer), hidden);
     }
 
     Tuple* route_active = dict_find(iter, MESSAGE_KEY_ROUTE_ACTIVE);

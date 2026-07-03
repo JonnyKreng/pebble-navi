@@ -1,6 +1,7 @@
 #include <pebble.h>
 #include "menu.h"
 #include "dictation.h"
+#include "navigation.h"
 
 #define MAX_DEST_NAMES 30
 #define MAX_NAME_LEN 32
@@ -16,6 +17,7 @@ static RouteMode s_route_mode;
 static char s_route_label[20];
 static bool s_rotation_mode;
 static char s_rotation_label[20];
+static char s_text_mode_label[20];
 
 static int s_selected_index;
 
@@ -49,34 +51,10 @@ static void update_rotation_label(void)
              "Rotate Map: %s", s_rotation_mode ? "On" : "Off");
 }
 
-static void draw_about(GContext* ctx, GRect bounds)
+static void update_text_mode_label(void)
 {
-    graphics_context_set_fill_color(ctx, GColorBlack);
-    graphics_fill_rect(ctx, bounds, 0, GCornerNone);
-    graphics_context_set_text_color(ctx, GColorWhite);
-
-    const char* lines[] = {
-        "Map data:",
-        "(c) OpenStreetMap",
-        "contributors (ODbL)",
-        "",
-        "Full attributions",
-        "in phone settings",
-    };
-    int num_lines = sizeof(lines) / sizeof(lines[0]);
-    int line_h = 18;
-    int total_h = num_lines * line_h;
-    int y = bounds.origin.y + (bounds.size.h - total_h) / 2;
-
-    for (int i = 0; i < num_lines; i++)
-    {
-        GRect r = GRect(0, y, bounds.size.w, line_h);
-        graphics_draw_text(ctx, lines[i],
-                           fonts_get_system_font(FONT_KEY_GOTHIC_18),
-                           r, GTextOverflowModeTrailingEllipsis,
-                           GTextAlignmentCenter, NULL);
-        y += line_h;
-    }
+    snprintf(s_text_mode_label, sizeof(s_text_mode_label),
+             "Text Mode: %s", navigation_get_text_mode() ? "On" : "Off");
 }
 
 static void menu_layer_update_proc(Layer* layer, GContext* ctx)
@@ -85,12 +63,6 @@ static void menu_layer_update_proc(Layer* layer, GContext* ctx)
 
     graphics_context_set_fill_color(ctx, GColorBlack);
     graphics_fill_rect(ctx, bounds, 0, GCornerNone);
-
-    if (s_mode == MODE_ABOUT)
-    {
-        draw_about(ctx, bounds);
-        return;
-    }
 
     if (s_mode == MODE_DICTATE_WAITING)
     {
@@ -128,7 +100,7 @@ static void menu_layer_update_proc(Layer* layer, GContext* ctx)
                 case 3: text = s_route_label;        break;
                 case 4: text = s_backlight_label;    break;
                 case 5: text = s_rotation_label;     break;
-                default: text = "About";             break;
+                case 6: text = s_text_mode_label;    break;
             }
 
             GRect item_rect = GRect(0, start_y + drawn * item_h, bounds.size.w, item_h);
@@ -275,6 +247,7 @@ void menu_init(Layer* parent_layer, MenuSendCallback send_cb)
     update_route_label();
     s_rotation_mode = false;
     update_rotation_label();
+    update_text_mode_label();
     s_collecting_dests = false;
     s_dest_names_total = 0;
     s_dest_names_received = 0;
@@ -417,7 +390,7 @@ bool menu_handle_select(void)
 
     if (s_mode == MODE_MAIN_MENU)
     {
-        static const int slot_noroute[5] = {0, 2, 3, 4, 5};
+        static const int slot_noroute[6] = {0, 2, 3, 4, 5, 6};
         int slot = s_has_route ? s_selected_index : slot_noroute[s_selected_index];
 
             switch (slot)
@@ -453,18 +426,13 @@ bool menu_handle_select(void)
                     if (s_send_cb) s_send_cb(MESSAGE_KEY_ROTATION_MODE, s_rotation_mode ? 1 : 0);
                     layer_mark_dirty(s_menu_layer);
                     break;
-                default:
-                    s_mode = MODE_ABOUT;
-                    s_selected_index = 0;
+                case 6:
+                    navigation_set_text_mode(!navigation_get_text_mode());
+                    update_text_mode_label();
                     layer_mark_dirty(s_menu_layer);
+                    if (s_send_cb) s_send_cb(MESSAGE_KEY_TEXT_MODE, navigation_get_text_mode() ? 1 : 0);
                     break;
             }
-    }
-    else if (s_mode == MODE_ABOUT)
-    {
-        s_mode = MODE_MAIN_MENU;
-        s_selected_index = s_has_route ? 6 : 5;
-        layer_mark_dirty(s_menu_layer);
     }
     else if (s_mode == MODE_DEST_LIST)
     {
@@ -495,7 +463,7 @@ bool menu_handle_back(void)
 {
     if (s_mode == MODE_MAP) return false;
 
-    if (s_mode == MODE_DEST_LIST || s_mode == MODE_ABOUT)
+    if (s_mode == MODE_DEST_LIST)
     {
         s_mode = MODE_MAIN_MENU;
         s_selected_index = 0;
@@ -519,6 +487,13 @@ bool menu_handle_back(void)
 
 bool menu_handle_message(DictionaryIterator* iter)
 {
+    Tuple* text_mode = dict_find(iter, MESSAGE_KEY_TEXT_MODE);
+    if (text_mode)
+    {
+        update_text_mode_label();
+        if (s_mode == MODE_MAIN_MENU) layer_mark_dirty(s_menu_layer);
+    }
+
     Tuple* total_t = dict_find(iter, MESSAGE_KEY_DEST_NAMES_TOTAL);
     if (total_t)
     {

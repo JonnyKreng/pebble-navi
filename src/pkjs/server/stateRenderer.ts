@@ -150,3 +150,20 @@ export async function renderForState(
     nextStep,
   };
 }
+
+export async function getTextModeOutput(
+  s: MapState,
+  existingRoute?: RouteResult,
+): Promise<RenderOutput> {
+  const route =
+    existingRoute ??
+    (s.dest && s.origin ? ((await fetchRoute(s.origin, s.dest, s.mode)) ?? undefined) : undefined);
+
+  let nextStep: { step: RouteStep; remainingDist: number } | undefined;
+  if (route && s.currentPos) {
+    const ns = findNextStep(route, s.currentPos);
+    if (ns) nextStep = ns;
+  }
+
+  return { pixels: new Uint8Array(0), route, nextStep };
+}

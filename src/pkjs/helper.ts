@@ -10,6 +10,7 @@ const BRIGHTNESS_KEY = 'brightness_value';
 const SHOW_DESTINATION_HINT_KEY = 'show_destination_hint';
 const SHOW_DICTATION_KEY = 'show_dictation';
 const MINIMUM_UPDATE_TIME_KEY = 'minimum_update_time';
+const TEXT_MODE_KEY = 'text_mode';
 
 export interface NavSettings {
   zoom: number;
@@ -101,6 +102,14 @@ export function loadMinimumUpdateTime(): number {
 
 export function saveMinimumUpdateTime(time: number): void {
   localStorage.setItem(MINIMUM_UPDATE_TIME_KEY, String(time));
+}
+
+export function loadTextMode(): boolean {
+  return localStorage.getItem(TEXT_MODE_KEY) === 'true';
+}
+
+export function saveTextMode(enabled: boolean): void {
+  localStorage.setItem(TEXT_MODE_KEY, enabled ? 'true' : 'false');
 }
 
 export function loadDestinations(): Destination[] {

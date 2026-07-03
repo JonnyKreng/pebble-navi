@@ -1,6 +1,6 @@
 import './server/polyfills';
 import { buildSettings, saveSettings } from './settings';
-import { loadDestinations, loadShowDictation, saveDestinations } from './helper';
+import { loadDestinations, loadShowDictation, loadTextMode, saveDestinations } from './helper';
 import { fromEvent, map, Subject, takeUntil, tap } from 'rxjs';
 import { sendDestinationsToWatch } from './destionations';
 import { dictateSearch, dictationResults } from './dictation';
@@ -76,6 +76,10 @@ fromEvent(Pebble, 'appmessage')
             if (result) {
               mapHandler.selectRoute({ lat: result.lat, lng: result.lng, name: result.name });
             }
+          }
+
+          if (payload.TEXT_MODE !== undefined) {
+            mapHandler.setTextMode(payload.TEXT_MODE !== 0);
           }
 
           if (payload.SAVE_CURRENT_LOCATION !== undefined) {
@@ -159,6 +163,7 @@ fromEvent(Pebble, 'ready')
       setWatchInfo(Pebble.getActiveWatchInfo());
 
       mapHandler = new MapHandler(destroyApp);
+      mapHandler.setTextMode(loadTextMode());
 
       // Sync saved settings to watch on connect
       Pebble.sendAppMessage(
@@ -166,6 +171,7 @@ fromEvent(Pebble, 'ready')
           ROUTE_MODE: mapHandler.getRouteMode(),
           ROTATION_MODE: mapHandler.getRotationMode() ? 1 : 0,
           SHOW_DICTATION: loadShowDictation() ? 1 : 0,
+          TEXT_MODE: loadTextMode() ? 1 : 0,
         },
         () => {},
         (err) => console.error('Initial state send failed: ' + err.error),

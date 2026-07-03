@@ -35,6 +35,13 @@ static int s_lzss_off = 0;
 static int s_lzss_len = 0;
 static int s_algo = 0;
 
+static bool s_text_mode = false;
+static char s_text_heading[64] = "";
+static char s_text_subtitle[64] = "";
+static char s_text_distance[64] = "";
+static char s_text_arrival[64] = "";
+static int s_text_bearing = -1;
+
 static int s_bitmap_width = SCREEN_W;
 static int s_bitmap_height = SCREEN_H;
 static int s_bitmap_data_size = SCREEN_W * SCREEN_H;
@@ -91,14 +98,99 @@ static void time_tick_handler(struct tm* tick_time, TimeUnits units_changed)
 
 int main_get_text_layers_height(void);
 
+static void draw_compass(GContext* ctx, int cx, int cy, int bearing)
+{
+    if (bearing < 0) return;
+
+    graphics_context_set_fill_color(ctx, GColorWhite);
+    graphics_fill_circle(ctx, GPoint(cx, cy), 11);
+    graphics_context_set_stroke_color(ctx, GColorBlack);
+    graphics_draw_circle(ctx, GPoint(cx, cy), 11);
+
+    int32_t angle = bearing * TRIG_MAX_ANGLE / 360;
+    int32_t sin_a = sin_lookup(angle);
+    int32_t cos_a = cos_lookup(angle);
+    int tx = cx + (8 * sin_a / TRIG_MAX_RATIO);
+    int ty = cy - (8 * cos_a / TRIG_MAX_RATIO);
+
+    graphics_context_set_fill_color(ctx, GColorBlack);
+    graphics_fill_circle(ctx, GPoint(tx, ty), 3);
+}
+
 static void map_update_proc(Layer* layer, GContext* ctx)
 {
+    GRect bounds = layer_get_bounds(layer);
+
+    if (s_text_mode)
+    {
+        graphics_context_set_fill_color(ctx, GColorWhite);
+        graphics_fill_rect(ctx, bounds, 0, GCornerNone);
+        graphics_context_set_text_color(ctx, GColorBlack);
+        graphics_context_set_fill_color(ctx, GColorBlack);
+
+        graphics_draw_text(ctx, s_time_text,
+                           fonts_get_system_font(FONT_KEY_GOTHIC_24_BOLD),
+                           GRect(4, 2, 60, 28), GTextOverflowModeTrailingEllipsis,
+                           GTextAlignmentLeft, NULL);
+
+        if (s_text_heading[0] != '\0')
+        {
+            int center_y = bounds.size.h / 2 - 10;
+
+            GRect heading_rect = GRect(4, center_y - 18, bounds.size.w - 8, 36);
+#if SCREEN_W > 144
+            graphics_draw_text(ctx, s_text_heading,
+                               fonts_get_system_font(FONT_KEY_BITHAM_30_BLACK),
+#else
+            graphics_draw_text(ctx, s_text_heading,
+                               fonts_get_system_font(FONT_KEY_GOTHIC_24_BOLD),
+#endif
+                               heading_rect, GTextOverflowModeWordWrap,
+                               GTextAlignmentCenter, NULL);
+
+            if (s_text_subtitle[0] != '\0')
+            {
+                GRect sub_rect = GRect(4, center_y + 26, bounds.size.w - 8, 26);
+#if SCREEN_W > 144
+                graphics_draw_text(ctx, s_text_subtitle,
+                                   fonts_get_system_font(FONT_KEY_GOTHIC_24_BOLD),
+#else
+                graphics_draw_text(ctx, s_text_subtitle,
+                                   fonts_get_system_font(FONT_KEY_GOTHIC_18_BOLD),
+#endif
+                                   sub_rect, GTextOverflowModeTrailingEllipsis,
+                                   GTextAlignmentCenter, NULL);
+            }
+            if (s_text_distance[0] != '\0')
+            {
+                int dist_y = center_y + 54;
+                if (s_text_subtitle[0] == '\0') dist_y = center_y + 30;
+                GRect dist_rect = GRect(4, dist_y, bounds.size.w - 8, 22);
+                graphics_draw_text(ctx, s_text_distance,
+                                   fonts_get_system_font(FONT_KEY_GOTHIC_18_BOLD),
+                                   dist_rect, GTextOverflowModeTrailingEllipsis,
+                                   GTextAlignmentCenter, NULL);
+            }
+        }
+
+        if (s_text_arrival[0] != '\0')
+        {
+            GRect arr_rect = GRect(4, bounds.size.h - 28, bounds.size.w - 8, 26);
+            graphics_draw_text(ctx, s_text_arrival,
+                               fonts_get_system_font(FONT_KEY_GOTHIC_24_BOLD),
+                               arr_rect, GTextOverflowModeTrailingEllipsis,
+                               GTextAlignmentCenter, NULL);
+        }
+
+        draw_compass(ctx, bounds.size.w - 20, 16, s_text_bearing);
+        return;
+    }
+
     if (s_bitmap)
     {
         graphics_draw_bitmap_in_rect(ctx, s_bitmap, layer_get_bounds(layer));
     }
 
-    GRect bounds = layer_get_bounds(layer);
     int icon_size = 22;
 
 #ifdef PBL_PLATFORM_CHALK
@@ -407,8 +499,75 @@ void navigation_destroy_map_layer(void)
     }
 }
 
+void navigation_set_text_mode(bool enabled)
+{
+    s_text_mode = enabled;
+    if (s_map_layer) layer_mark_dirty(s_map_layer);
+}
+
+bool navigation_get_text_mode(void)
+{
+    return s_text_mode;
+}
+
+void navigation_set_arrival_text(const char* text)
+{
+    strncpy(s_text_arrival, text, sizeof(s_text_arrival) - 1);
+    s_text_arrival[sizeof(s_text_arrival) - 1] = '\0';
+    if (s_text_mode && s_map_layer) layer_mark_dirty(s_map_layer);
+}
+
+void navigation_set_text_info(const char* heading, const char* subtitle, const char* distance)
+{
+    strncpy(s_text_heading, heading, sizeof(s_text_heading) - 1);
+    s_text_heading[sizeof(s_text_heading) - 1] = '\0';
+    strncpy(s_text_subtitle, subtitle, sizeof(s_text_subtitle) - 1);
+    s_text_subtitle[sizeof(s_text_subtitle) - 1] = '\0';
+    strncpy(s_text_distance, distance, sizeof(s_text_distance) - 1);
+    s_text_distance[sizeof(s_text_distance) - 1] = '\0';
+    if (s_text_mode && s_map_layer) layer_mark_dirty(s_map_layer);
+}
+
+void navigation_set_text_bearing(int bearing)
+{
+    s_text_bearing = bearing;
+    if (s_text_mode && s_map_layer) layer_mark_dirty(s_map_layer);
+}
+
 bool navigation_handle_message(DictionaryIterator* iter)
 {
+    Tuple* text_mode = dict_find(iter, MESSAGE_KEY_TEXT_MODE);
+    if (text_mode)
+    {
+        s_text_mode = text_mode->value->int32 != 0;
+        if (s_map_layer) layer_mark_dirty(s_map_layer);
+    }
+
+    Tuple* heading = dict_find(iter, MESSAGE_KEY_TEXT_MODE_HEADING);
+    Tuple* subtitle = dict_find(iter, MESSAGE_KEY_TEXT_MODE_SUBTITLE);
+    if (heading && subtitle)
+    {
+        strncpy(s_text_heading, heading->value->cstring, sizeof(s_text_heading) - 1);
+        s_text_heading[sizeof(s_text_heading) - 1] = '\0';
+        strncpy(s_text_subtitle, subtitle->value->cstring, sizeof(s_text_subtitle) - 1);
+        s_text_subtitle[sizeof(s_text_subtitle) - 1] = '\0';
+        if (s_text_mode && s_map_layer) layer_mark_dirty(s_map_layer);
+    }
+    Tuple* dist = dict_find(iter, MESSAGE_KEY_TEXT_MODE_DISTANCE);
+    if (dist)
+    {
+        strncpy(s_text_distance, dist->value->cstring, sizeof(s_text_distance) - 1);
+        s_text_distance[sizeof(s_text_distance) - 1] = '\0';
+        if (s_text_mode && s_map_layer) layer_mark_dirty(s_map_layer);
+    }
+
+    Tuple* bearing_t = dict_find(iter, MESSAGE_KEY_TEXT_MODE_BEARING);
+    if (bearing_t)
+    {
+        s_text_bearing = bearing_t->value->int32;
+        if (s_text_mode && s_map_layer) layer_mark_dirty(s_map_layer);
+    }
+
     Tuple* idx = dict_find(iter, MESSAGE_KEY_IMAGE_CHUNK_INDEX);
     Tuple* total = dict_find(iter, MESSAGE_KEY_IMAGE_CHUNKS_TOTAL);
     Tuple* data = dict_find(iter, MESSAGE_KEY_IMAGE_CHUNK_DATA);

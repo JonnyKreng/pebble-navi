@@ -10,9 +10,9 @@ import {
   takeUntil,
   tap,
 } from 'rxjs';
-import { MapState, renderForState, RenderOutput } from './server/stateRenderer';
+import { MapState, renderForState, getTextModeOutput, RenderOutput } from './server/stateRenderer';
 import { Destination } from './index';
-import { distanceToRoute, RouteResult, routeProgress } from './server/routing';
+import { bearingTo, distanceToRoute, RouteResult, routeProgress } from './server/routing';
 import {
   asciiNormalize,
   encodeAdaptive,
@@ -23,6 +23,7 @@ import {
   loadBrightness,
   loadShowDestinationHint,
   loadMinimumUpdateTime,
+  saveTextMode,
 } from './helper';
 import { ENABLE_LOGS } from './test-data';
 
@@ -52,6 +53,7 @@ export class MapHandler {
   private lastRenderedState: MapState | null = null;
   private isBw = false;
   private rotationMode = false;
+  private textMode = false;
   private isEmulator = false;
   private readonly mapState = new BehaviorSubject<PartialMapState>({});
   private userVerticalOffset: number | undefined = undefined;
@@ -161,15 +163,15 @@ export class MapHandler {
             console.time('renderForState');
             console.time('pipeline');
           }
-          const stateWithBrightness = { ...state, brightness: loadBrightness() };
-          return from(
-            renderForState(
-              stateWithBrightness,
-              this.existingRoute,
-              this.isBw,
-              this.userVerticalOffset,
-            ),
-          ).pipe(
+          const task = this.textMode
+            ? getTextModeOutput(state, this.existingRoute)
+            : renderForState(
+                { ...state, brightness: loadBrightness() },
+                this.existingRoute,
+                this.isBw,
+                this.userVerticalOffset,
+              );
+          return from(task).pipe(
             tap(() => {
               if (ENABLE_LOGS) console.timeEnd('renderForState');
             }),
@@ -297,6 +299,15 @@ export class MapHandler {
     saveSettings({ zoom: s.zoom!, mode: s.mode!, rotationMode: enabled });
   }
 
+  public setTextMode(enabled: boolean): void {
+    console.log('setTextMode', enabled);
+    this.textMode = enabled;
+    saveTextMode(enabled);
+    this.mapState.next({
+      ...this.mapState.value,
+    });
+  }
+
   public zoom(zoom: number): void {
     if (ENABLE_LOGS) console.info('zoom', zoom);
 
@@ -326,7 +337,9 @@ export class MapHandler {
     this.existingRoute = renderOutput.route;
 
     this.sendRouteToWatch(renderOutput, currentPos);
-    this.sendBitmapToWatch(renderOutput.pixels);
+    if (!this.textMode) {
+      this.sendBitmapToWatch(renderOutput.pixels);
+    }
   }
 
   private sendBitmapToWatch(pixels: Uint8Array): void {
@@ -466,11 +479,60 @@ export class MapHandler {
       }
     }
 
+    if (this.textMode) {
+      if (output.route && output.nextStep) {
+        const stepDist =
+          units === 'imperial'
+            ? `${Math.round(output.nextStep.remainingDist / 0.3048)} ft`
+            : `${Math.round(output.nextStep.remainingDist)} m`;
+        dict.TEXT_MODE_HEADING = this.formatTurnInstruction(output.nextStep.step);
+        dict.TEXT_MODE_SUBTITLE = asciiNormalize(output.nextStep.step.name || '');
+        dict.TEXT_MODE_DISTANCE = stepDist;
+        if (currentPos && output.route.coordinates.length > 0) {
+          dict.TEXT_MODE_BEARING = Math.round(bearingTo(currentPos, output.nextStep.step.location));
+        }
+      } else if (currentPos) {
+        dict.TEXT_MODE_HEADING = `${currentPos.lat.toFixed(4)}, ${currentPos.lng.toFixed(4)}`;
+        dict.TEXT_MODE_SUBTITLE = '';
+        dict.TEXT_MODE_DISTANCE = '';
+        dict.TEXT_MODE_BEARING = -1;
+      }
+    }
+
     Pebble.sendAppMessage(
       dict,
       () => {},
       (err) => console.error('Route info send failed: ' + err.error),
     );
+  }
+
+  private formatTurnInstruction(step: { type: string; modifier?: string }): string {
+    const type = step.type;
+    const mod = step.modifier;
+    if (type === 'turn' || type === 'continue') {
+      if (mod === 'left') return 'Turn left';
+      if (mod === 'right') return 'Turn right';
+      if (mod === 'sharp left') return 'Sharp left';
+      if (mod === 'sharp right') return 'Sharp right';
+      if (mod === 'slight left') return 'Slight left';
+      if (mod === 'slight right') return 'Slight right';
+      if (mod === 'straight') return 'Continue straight';
+      if (mod === 'uturn') return 'Make a U-turn';
+    }
+    if (type === 'roundabout' || type === 'rotary') return 'Enter roundabout';
+    if (type === 'arrive') return 'You have arrived';
+    if (type === 'depart') return 'Depart';
+    if (type === 'fork') {
+      if (mod === 'left') return 'Keep left';
+      if (mod === 'right') return 'Keep right';
+    }
+    if (type === 'merge') return 'Merge';
+    if (type === 'end of road') {
+      if (mod === 'left') return 'Turn left';
+      if (mod === 'right') return 'Turn right';
+      if (mod === 'straight') return 'Continue straight';
+    }
+    return mod || type || '';
   }
 
   private getRecalculationDistance() {

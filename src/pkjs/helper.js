@@ -16,6 +16,8 @@ exports.loadShowDictation = loadShowDictation;
 exports.saveShowDictation = saveShowDictation;
 exports.loadMinimumUpdateTime = loadMinimumUpdateTime;
 exports.saveMinimumUpdateTime = saveMinimumUpdateTime;
+exports.loadTextMode = loadTextMode;
+exports.saveTextMode = saveTextMode;
 exports.loadDestinations = loadDestinations;
 exports.saveDestinations = saveDestinations;
 exports.encodeLZSS = encodeLZSS;
@@ -32,6 +34,7 @@ var BRIGHTNESS_KEY = 'brightness_value';
 var SHOW_DESTINATION_HINT_KEY = 'show_destination_hint';
 var SHOW_DICTATION_KEY = 'show_dictation';
 var MINIMUM_UPDATE_TIME_KEY = 'minimum_update_time';
+var TEXT_MODE_KEY = 'text_mode';
 function loadSettings() {
     try {
         var saved = localStorage.getItem(SETTINGS_KEY);
@@ -102,6 +105,12 @@ function loadMinimumUpdateTime() {
 }
 function saveMinimumUpdateTime(time) {
     localStorage.setItem(MINIMUM_UPDATE_TIME_KEY, String(time));
+}
+function loadTextMode() {
+    return localStorage.getItem(TEXT_MODE_KEY) === 'true';
+}
+function saveTextMode(enabled) {
+    localStorage.setItem(TEXT_MODE_KEY, enabled ? 'true' : 'false');
 }
 function loadDestinations() {
     try {

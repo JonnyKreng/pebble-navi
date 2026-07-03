@@ -49,6 +49,7 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.USER_Y_OFFSET = void 0;
 exports.renderForState = renderForState;
+exports.getTextModeOutput = getTextModeOutput;
 var osm_js_1 = require("./osm.js");
 var routing_js_1 = require("./routing.js");
 var renderer_js_1 = require("./renderer.js");
@@ -170,6 +171,40 @@ function renderForState(s_1, existingRoute_1) {
                             route: route,
                             nextStep: nextStep,
                         }];
+            }
+        });
+    });
+}
+function getTextModeOutput(s, existingRoute) {
+    return __awaiter(this, void 0, void 0, function () {
+        var route, _a, _b, nextStep, ns;
+        var _c;
+        return __generator(this, function (_d) {
+            switch (_d.label) {
+                case 0:
+                    if (!(existingRoute !== null && existingRoute !== void 0)) return [3 /*break*/, 1];
+                    _a = existingRoute;
+                    return [3 /*break*/, 5];
+                case 1:
+                    if (!(s.dest && s.origin)) return [3 /*break*/, 3];
+                    return [4 /*yield*/, (0, routing_js_1.fetchRoute)(s.origin, s.dest, s.mode)];
+                case 2:
+                    _b = ((_c = (_d.sent())) !== null && _c !== void 0 ? _c : undefined);
+                    return [3 /*break*/, 4];
+                case 3:
+                    _b = undefined;
+                    _d.label = 4;
+                case 4:
+                    _a = (_b);
+                    _d.label = 5;
+                case 5:
+                    route = _a;
+                    if (route && s.currentPos) {
+                        ns = (0, routing_js_1.findNextStep)(route, s.currentPos);
+                        if (ns)
+                            nextStep = ns;
+                    }
+                    return [2 /*return*/, { pixels: new Uint8Array(0), route: route, nextStep: nextStep }];
             }
         });
     });
