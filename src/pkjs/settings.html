@@ -470,6 +470,21 @@
         />
         <span id="min-update-time-val" style="min-width: 48px; text-align: right; font-weight: bold; color: #FA4A36;">__MIN_UPDATE_TIME__s</span>
       </div>
+      <div class="section-title">Vibration</div>
+      <label
+        style="
+          display: flex;
+          align-items: center;
+          gap: 8px;
+          padding: 8px;
+          background: #2a2a2a;
+          border-radius: 6px;
+          cursor: pointer;
+          margin: 8px 0;
+        "
+      >
+        <input type="checkbox" id="vibration-disabled" __VIBRATION_DISABLED_CHECKED__ /> Disable turn vibration (disabled for car mode)
+      </label>
       <div class="section-title">Show dictation</div>
       <label
         style="
@@ -645,6 +660,7 @@
           var b = parseInt(document.getElementById("brightness").value, 10);
           var sdh = document.getElementById("show-dest-hint").checked;
           var sd = document.getElementById("show-dictation").checked;
+          var vd = document.getElementById("vibration-disabled").checked;
           var mut = parseInt(document.getElementById("min-update-time").value, 10);
           var payload = {
               destinations: dests,
@@ -654,6 +670,7 @@
               brightness: isNaN(b) ? 40 : b,
               show_destination_hint: sdh,
               show_dictation: sd,
+              vibration_disabled: vd,
               minimum_update_time: isNaN(mut) ? 0 : mut
           };
           document.location = "pebblejs://close#" + encodeURIComponent(JSON.stringify(payload))

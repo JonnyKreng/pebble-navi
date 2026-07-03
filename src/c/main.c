@@ -88,6 +88,21 @@ static void inbox_received(DictionaryIterator* iter, void* ctx)
         layer_set_hidden(text_layer_get_layer(s_next_step_layer), s_next_step_text[0] == '\0');
     }
 
+    Tuple* vibrate_pattern = dict_find(iter, MESSAGE_KEY_VIBRATE_PATTERN);
+    if (vibrate_pattern)
+    {
+        int32_t pattern = vibrate_pattern->value->int32;
+        switch (pattern)
+        {
+            case 1:
+                vibes_short_pulse();
+                break;
+            case 2:
+                vibes_double_pulse();
+                break;
+        }
+    }
+
     Tuple* route_active = dict_find(iter, MESSAGE_KEY_ROUTE_ACTIVE);
     if (route_active)
     {

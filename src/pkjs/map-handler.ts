@@ -23,6 +23,7 @@ import {
   loadBrightness,
   loadShowDestinationHint,
   loadMinimumUpdateTime,
+  loadVibrationDisabled,
 } from './helper';
 import { ENABLE_LOGS } from './test-data';
 
@@ -55,6 +56,8 @@ export class MapHandler {
   private isEmulator = false;
   private readonly mapState = new BehaviorSubject<PartialMapState>({});
   private userVerticalOffset: number | undefined = undefined;
+  private lastVibrateStepKey = '';
+  private lastVibratedStepLocation: string | null = null;
 
   constructor(destroyApp: Observable<void>) {
     const info = Pebble.getActiveWatchInfo();
@@ -242,6 +245,7 @@ export class MapHandler {
   public selectRoute(destination: Destination): void {
     if (ENABLE_LOGS) console.info('selectRoute');
 
+    this.lastVibrateStepKey = '';
     this.existingRoute = undefined;
     const state = this.mapState.value;
 
@@ -263,6 +267,7 @@ export class MapHandler {
   public resetRoute(): void {
     if (ENABLE_LOGS) console.info('resetRoute');
 
+    this.lastVibrateStepKey = '';
     this.existingRoute = undefined;
     this.mapState.next({
       ...this.mapState.value,
@@ -444,6 +449,7 @@ export class MapHandler {
       const mins = m % 60;
       const time = h > 0 ? (mins > 0 ? `${h} h ${mins} min` : `${h} h`) : `${m} min`;
 
+      // Navigation Info 2st Line
       if (units === 'imperial') {
         const mi = d / 1609.344;
         dict.NAV_INFO_LINE1 =
@@ -454,6 +460,7 @@ export class MapHandler {
       }
       dict.ROUTE_ACTIVE = 1;
 
+      // Navigation Info 1st Line
       const ns = output.nextStep;
       if (ns && Math.round(ns.remainingDist) > 0) {
         const stepDist =
@@ -463,6 +470,47 @@ export class MapHandler {
         dict.NAV_INFO_LINE2 = `${ns.step.modifier || ''} ${asciiNormalize(ns.step.name) || ''} (${stepDist})`;
       } else {
         dict.NAV_INFO_LINE2 = '';
+      }
+
+      // Vibration
+      const mode = this.mapState.value.mode;
+      const vibrationDisabled = loadVibrationDisabled();
+
+      if (mode !== 'driving' && !vibrationDisabled) {
+        let vibratePattern = 0;
+
+        if (ns && ns.step.modifier && Math.round(ns.remainingDist) > 0) {
+          const stepKey = `${ns.step.location.lat},${ns.step.location.lng}`;
+          const isWalk = mode === 'walking';
+          const isCycle = mode === 'cycling';
+          const dist = ns.remainingDist;
+          if (
+            stepKey !== this.lastVibrateStepKey &&
+            ((isWalk && dist <= 10) || (isCycle && dist <= 30))
+          ) {
+            const mod = ns.step.modifier;
+            if (mod === 'left' || mod === 'sharp left') {
+              vibratePattern = 1;
+            } else if (mod === 'right' || mod === 'sharp right') {
+              vibratePattern = 2;
+            }
+            if (vibratePattern !== 0) {
+              this.lastVibrateStepKey = stepKey;
+            }
+          }
+        }
+
+        const stepLocation = ns ? `${ns.step.location.lat},${ns.step.location.lng}` : null;
+        if (vibratePattern !== 0) {
+          if (stepLocation && stepLocation === this.lastVibratedStepLocation) {
+            vibratePattern = 0;
+          } else {
+            this.lastVibratedStepLocation = stepLocation;
+          }
+        } else {
+          this.lastVibratedStepLocation = null;
+        }
+        dict.VIBRATE_PATTERN = vibratePattern;
       }
     }
 

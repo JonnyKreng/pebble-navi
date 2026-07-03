@@ -10,6 +10,7 @@ const BRIGHTNESS_KEY = 'brightness_value';
 const SHOW_DESTINATION_HINT_KEY = 'show_destination_hint';
 const SHOW_DICTATION_KEY = 'show_dictation';
 const MINIMUM_UPDATE_TIME_KEY = 'minimum_update_time';
+const VIBRATION_DISABLED_KEY = 'vibration_disabled';
 
 export interface NavSettings {
   zoom: number;
@@ -101,6 +102,14 @@ export function loadMinimumUpdateTime(): number {
 
 export function saveMinimumUpdateTime(time: number): void {
   localStorage.setItem(MINIMUM_UPDATE_TIME_KEY, String(time));
+}
+
+export function loadVibrationDisabled(): boolean {
+  return localStorage.getItem(VIBRATION_DISABLED_KEY) === 'true';
+}
+
+export function saveVibrationDisabled(disabled: boolean): void {
+  localStorage.setItem(VIBRATION_DISABLED_KEY, disabled ? 'true' : 'false');
 }
 
 export function loadDestinations(): Destination[] {

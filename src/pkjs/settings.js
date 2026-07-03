@@ -12,6 +12,7 @@ function buildSettings(userLat, userLng) {
     var brightness = (0, helper_1.loadBrightness)();
     var showDestHint = (0, helper_1.loadShowDestinationHint)();
     var showDictation = (0, helper_1.loadShowDictation)();
+    var vibrationDisabled = (0, helper_1.loadVibrationDisabled)();
     var minUpdateTime = (0, helper_1.loadMinimumUpdateTime)();
     var html = settings_template_1.SETTINGS_HTML;
     html = html.replace('__DESTINATIONS__', JSON.stringify(destinations));
@@ -22,6 +23,7 @@ function buildSettings(userLat, userLng) {
     html = html.replace(/__BRIGHTNESS_VALUE__/g, String(brightness));
     html = html.replace('__SHOW_DEST_HINT_CHECKED__', showDestHint ? ' checked' : '');
     html = html.replace('__SHOW_DICTATION_CHECKED__', showDictation ? ' checked' : '');
+    html = html.replace('__VIBRATION_DISABLED_CHECKED__', vibrationDisabled ? ' checked' : '');
     html = html.replace(/__MIN_UPDATE_TIME__/g, String(minUpdateTime));
     html = html.replace('__ROUTING_MODE__', (0, helper_1.loadSettings)().mode);
     html = html.replace('__USER_LAT__', userLat !== undefined ? String(userLat) : 'undefined');
@@ -52,6 +54,9 @@ function saveSettings(response) {
         }
         if (data.show_dictation !== undefined) {
             (0, helper_1.saveShowDictation)(data.show_dictation);
+        }
+        if (data.vibration_disabled !== undefined) {
+            (0, helper_1.saveVibrationDisabled)(data.vibration_disabled);
         }
         if (data.minimum_update_time !== undefined) {
             (0, helper_1.saveMinimumUpdateTime)(data.minimum_update_time);

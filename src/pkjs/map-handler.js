@@ -45,6 +45,8 @@ var MapHandler = /** @class */ (function () {
         this.isEmulator = false;
         this.mapState = new rxjs_1.BehaviorSubject({});
         this.userVerticalOffset = undefined;
+        this.lastVibrateStepKey = '';
+        this.lastVibratedStepLocation = null;
         var info = Pebble.getActiveWatchInfo();
         var w = 144;
         var h = 168;
@@ -176,6 +178,7 @@ var MapHandler = /** @class */ (function () {
     MapHandler.prototype.selectRoute = function (destination) {
         if (test_data_1.ENABLE_LOGS)
             console.info('selectRoute');
+        this.lastVibrateStepKey = '';
         this.existingRoute = undefined;
         var state = this.mapState.value;
         this.mapState.next(__assign(__assign({}, state), { dest: destination, origin: state.currentPos }));
@@ -190,6 +193,7 @@ var MapHandler = /** @class */ (function () {
     MapHandler.prototype.resetRoute = function () {
         if (test_data_1.ENABLE_LOGS)
             console.info('resetRoute');
+        this.lastVibrateStepKey = '';
         this.existingRoute = undefined;
         this.mapState.next(__assign(__assign({}, this.mapState.value), { dest: undefined, origin: undefined }));
     };
@@ -355,6 +359,43 @@ var MapHandler = /** @class */ (function () {
             else {
                 dict.NAV_INFO_LINE2 = '';
             }
+            var mode = this.mapState.value.mode;
+            var vibrationDisabled = (0, helper_1.loadVibrationDisabled)();
+            var vibratePattern = 0;
+            if (mode !== 'driving' && !vibrationDisabled) {
+                if (ns && ns.step.modifier && Math.round(ns.remainingDist) > 0) {
+                    var stepKey = "".concat(ns.step.location.lat, ",").concat(ns.step.location.lng);
+                    var isWalk = mode === 'walking';
+                    var isCycle = mode === 'cycling';
+                    var dist = ns.remainingDist;
+                    if (stepKey !== this.lastVibrateStepKey &&
+                        ((isWalk && dist <= 30) || (isCycle && dist <= 50))) {
+                        var mod = ns.step.modifier;
+                        if (mod === 'left' || mod === 'sharp left') {
+                            vibratePattern = 1;
+                        }
+                        else if (mod === 'right' || mod === 'sharp right') {
+                            vibratePattern = 2;
+                        }
+                        if (vibratePattern !== 0) {
+                            this.lastVibrateStepKey = stepKey;
+                        }
+                    }
+                }
+            }
+            var stepLocation = ns ? "".concat(ns.step.location.lat, ",").concat(ns.step.location.lng) : null;
+            if (vibratePattern !== 0) {
+                if (stepLocation && stepLocation === this.lastVibratedStepLocation) {
+                    vibratePattern = 0;
+                }
+                else {
+                    this.lastVibratedStepLocation = stepLocation;
+                }
+            }
+            else {
+                this.lastVibratedStepLocation = null;
+            }
+            dict.VIBRATE_PATTERN = vibratePattern;
         }
         Pebble.sendAppMessage(dict, function () { }, function (err) { return console.error('Route info send failed: ' + err.error); });
     };

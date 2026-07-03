@@ -15,6 +15,8 @@ import {
   saveShowDestinationHint,
   loadShowDictation,
   saveShowDictation,
+  loadVibrationDisabled,
+  saveVibrationDisabled,
   loadMinimumUpdateTime,
   saveMinimumUpdateTime,
 } from './helper';
@@ -28,6 +30,7 @@ export function buildSettings(userLat?: number, userLng?: number): string {
   const brightness = loadBrightness();
   const showDestHint = loadShowDestinationHint();
   const showDictation = loadShowDictation();
+  const vibrationDisabled = loadVibrationDisabled();
   const minUpdateTime = loadMinimumUpdateTime();
 
   let html = SETTINGS_HTML;
@@ -39,6 +42,7 @@ export function buildSettings(userLat?: number, userLng?: number): string {
   html = html.replace(/__BRIGHTNESS_VALUE__/g, String(brightness));
   html = html.replace('__SHOW_DEST_HINT_CHECKED__', showDestHint ? ' checked' : '');
   html = html.replace('__SHOW_DICTATION_CHECKED__', showDictation ? ' checked' : '');
+  html = html.replace('__VIBRATION_DISABLED_CHECKED__', vibrationDisabled ? ' checked' : '');
   html = html.replace(/__MIN_UPDATE_TIME__/g, String(minUpdateTime));
   html = html.replace('__ROUTING_MODE__', loadSettings().mode);
   html = html.replace('__USER_LAT__', userLat !== undefined ? String(userLat) : 'undefined');
@@ -70,6 +74,9 @@ export function saveSettings(response: string): Destination[] {
     }
     if (data.show_dictation !== undefined) {
       saveShowDictation(data.show_dictation);
+    }
+    if (data.vibration_disabled !== undefined) {
+      saveVibrationDisabled(data.vibration_disabled);
     }
     if (data.minimum_update_time !== undefined) {
       saveMinimumUpdateTime(data.minimum_update_time);

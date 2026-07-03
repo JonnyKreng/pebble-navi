@@ -35,7 +35,8 @@
       "DICTATE_RESULT_NAME",
       "DICTATE_RESULT_DISTANCE",
       "DICTATE_SELECT_INDEX",
-      "SHOW_DICTATION"
+      "SHOW_DICTATION",
+      "VIBRATE_PATTERN"
     ],
     "projectType": "native",
     "resources": {
