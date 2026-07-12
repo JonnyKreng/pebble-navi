@@ -105,14 +105,17 @@ static void menu_layer_update_proc(Layer* layer, GContext* ctx)
 
     if (s_mode == MODE_MAIN_MENU)
     {
+#if defined(PBL_ROUND)
+        int center_y = bounds.size.h / 2 - ITEM_HEIGHT / 2;
+#else
         int num_visible = s_has_route ? 7 : 6;
         int item_h = ITEM_HEIGHT;
         if (num_visible * item_h > bounds.size.h)
         {
             item_h = bounds.size.h / num_visible;
         }
-        int total_h = num_visible * item_h;
-        int start_y = (bounds.size.h - total_h) / 2;
+        int start_y = (bounds.size.h - num_visible * item_h) / 2;
+#endif
 
         int drawn = 0;
         for (int slot = 0; slot < 7; slot++)
@@ -131,7 +134,19 @@ static void menu_layer_update_proc(Layer* layer, GContext* ctx)
                 default: text = "About";             break;
             }
 
-            GRect item_rect = GRect(0, start_y + drawn * item_h, bounds.size.w, item_h);
+#if defined(PBL_ROUND)
+            int item_y = center_y + (drawn - s_selected_index) * ITEM_HEIGHT;
+            if (item_y + ITEM_HEIGHT <= 0 || item_y >= bounds.size.h)
+            { drawn++; continue; }
+#else
+            int item_y = start_y + drawn * item_h;
+#endif
+
+#if defined(PBL_ROUND)
+            GRect item_rect = GRect(0, item_y, bounds.size.w, ITEM_HEIGHT);
+#else
+            GRect item_rect = GRect(0, item_y, bounds.size.w, item_h);
+#endif
 
             if (drawn == s_selected_index)
             {
@@ -153,10 +168,13 @@ static void menu_layer_update_proc(Layer* layer, GContext* ctx)
     }
     else if (s_mode == MODE_DEST_LIST)
     {
-        int max_visible = bounds.size.h / ITEM_HEIGHT;
         bool show_dictate = s_show_dictation;
         int dict_offset = show_dictate ? 1 : 0;
         int total_items = s_dest_names_total + dict_offset;
+#if defined(PBL_ROUND)
+        int center_y = bounds.size.h / 2 - ITEM_HEIGHT / 2;
+#else
+        int max_visible = bounds.size.h / ITEM_HEIGHT;
         if (s_selected_index < s_dest_scroll_offset)
         {
             s_dest_scroll_offset = s_selected_index;
@@ -165,11 +183,20 @@ static void menu_layer_update_proc(Layer* layer, GContext* ctx)
         {
             s_dest_scroll_offset = s_selected_index - max_visible + 1;
         }
+#endif
 
-        int drawn = 0;
-        for (int slot = s_dest_scroll_offset; slot < total_items && drawn < max_visible; slot++, drawn++)
+        for (int slot = 0; slot < total_items; slot++)
         {
-            GRect item_rect = GRect(0, drawn * ITEM_HEIGHT, bounds.size.w, ITEM_HEIGHT);
+#if defined(PBL_ROUND)
+            int item_y = center_y + (slot - s_selected_index) * ITEM_HEIGHT;
+            if (item_y + ITEM_HEIGHT <= 0 || item_y >= bounds.size.h) continue;
+#else
+            int drawn = slot - s_dest_scroll_offset;
+            if (drawn < 0 || drawn >= max_visible) continue;
+            int item_y = drawn * ITEM_HEIGHT;
+#endif
+
+            GRect item_rect = GRect(0, item_y, bounds.size.w, ITEM_HEIGHT);
 
             if (slot == s_selected_index)
             {
@@ -200,21 +227,29 @@ static void menu_layer_update_proc(Layer* layer, GContext* ctx)
     }
     else if (s_mode == MODE_DICTATE_LIST)
     {
+        int total = dictation_get_total();
+#if defined(PBL_ROUND)
+        int center_y = bounds.size.h / 2 - ITEM_HEIGHT / 2;
+#else
         int max_visible = bounds.size.h / ITEM_HEIGHT;
         if (s_selected_index < s_dest_scroll_offset)
-        {
             s_dest_scroll_offset = s_selected_index;
-        }
         else if (s_selected_index >= s_dest_scroll_offset + max_visible)
-        {
             s_dest_scroll_offset = s_selected_index - max_visible + 1;
-        }
+#endif
 
-        int total = dictation_get_total();
-        int drawn = 0;
-        for (int i = s_dest_scroll_offset; i < total && drawn < max_visible; i++, drawn++)
+        for (int i = 0; i < total; i++)
         {
-            GRect item_rect = GRect(0, drawn * ITEM_HEIGHT, bounds.size.w, ITEM_HEIGHT);
+#if defined(PBL_ROUND)
+            int item_y = center_y + (i - s_selected_index) * ITEM_HEIGHT;
+            if (item_y + ITEM_HEIGHT <= 0 || item_y >= bounds.size.h) continue;
+#else
+            int drawn = i - s_dest_scroll_offset;
+            if (drawn < 0 || drawn >= max_visible) continue;
+            int item_y = drawn * ITEM_HEIGHT;
+#endif
+
+            GRect item_rect = GRect(0, item_y, bounds.size.w, ITEM_HEIGHT);
 
             if (i == s_selected_index)
             {
